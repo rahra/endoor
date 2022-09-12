@@ -12,6 +12,12 @@
 #include "log.h"
 
 
+/*! Init an allocate memory for a protocol address list of n available protocol
+ * addresses.
+ * @param pa Pointer to empty protocol address struct.
+ * @param n Number of elements that should be allocated.
+ * @return On success, 0 is returned. In case of error, -1 is returned.
+ */
 int init_pa_list(proto_addr_t *pa, int n)
 {
    memset(pa, 0, sizeof(*pa));
@@ -26,6 +32,14 @@ int init_pa_list(proto_addr_t *pa, int n)
 }
 
 
+/*! This function initializes and allocates memory for a mac address table of n
+ * entries, each allowing m protocol addresses to be stored.
+ * @param pa Pointer to empty protocol address struct.
+ * @param n Number of elements that should be allocated for ethernet addresses.
+ * @param m Number of protocol address entries (IP/IPV6) that each ethernet
+ * address can be associated with.
+ * @return On success, 0 is returned. In case of error, -1 is returned.
+ */
 int init_mac_table(proto_addr_t *pa, int n, int m)
 {
    if (init_pa_list(pa, n) == -1)
@@ -37,6 +51,12 @@ int init_mac_table(proto_addr_t *pa, int n, int m)
 }
 
 
+/*! Return the memory size of a network address depending on the address
+ * family.
+ * @param family Adress family (AF_INET, AF_INET6, AF_PACKET).
+ * @return Returns the number of bytes which an address of the address family
+ * takes in memory. If the address family is unknown, 0 is returned.
+ */
 int addr_size(int family)
 {
    switch (family)
@@ -56,6 +76,11 @@ int addr_size(int family)
 }
 
 
+/*! Get an empty index in a protocol address list.
+ * @param pa Pointer to protocol address list.
+ * @return The function returns a valid index which is 0 <= index < pa->size.
+ * If no empty index is available, pa->size is returned.
+ */
 int get_empty_index(const proto_addr_t *pa)
 {
    int i;
@@ -64,6 +89,13 @@ int get_empty_index(const proto_addr_t *pa)
 }
 
 
+/*! Get the index of an address in the protocol address list pa.
+ * @param pa Pointer to protocol address list.
+ * @param family Address family of address.
+ * @param addr Pointer to address.
+ * @return The function returns a valid index which is 0 <= index < pa->size.
+ * If the address was not found, pa->size is returned.
+ */
 int get_addr_index(const proto_addr_t *pa, int family, const char *addr)
 {
    int i, j;
@@ -76,15 +108,25 @@ int get_addr_index(const proto_addr_t *pa, int family, const char *addr)
       if (pa->list[i].family == family && !memcmp(pa->list[i].addr, addr, addr_size(family)))
          return i;
    }
-   return -1;
+   return pa->size;
 }
 
 
+/*! This function updates an entry in the protocol address list. If no entry is
+ * available yet, a new entry is created.
+ * @param pa Pointer to protocol address list.
+ * @param family Address family of address.
+ * @param addr Pointer to address.
+ * @param flags Flags which are associated with this address (e.g. PA_ROUTER).
+ * @return The function returns a valid index which is 0 <= index < pa->size.
+ * If the address table is full and the address could not be added, -1 is
+ * returned.
+ */
 int update_entry(proto_addr_t *pa, int family, const char *addr, int flags)
 {
    int i;
 
-   if ((i = get_addr_index(pa, family, addr)) == -1)
+   if ((i = get_addr_index(pa, family, addr)) >= pa->size)
    {
       if ((i = get_empty_index(pa)) >= pa->size)
       {
@@ -107,6 +149,16 @@ int update_entry(proto_addr_t *pa, int family, const char *addr, int flags)
 }
 
 
+/*! This function updates the mac address table with the address pair hwaddr/addr.
+ * @param pa Pointer to protocol address list.
+ * @param hwaddr Ethernet address.
+ * @param family Address family of protocol address.
+ * @param addr Pointer to protocol address.
+ * @param flags Flags which are associated with this address (e.g. PA_ROUTER).
+ * @return The function returns a valid index which is 0 <= index < pa->size.
+ * If the address table is full and the address could not be added, -1 is
+ * returned.
+ */
 int update_table(proto_addr_t *pa, const char *hwaddr, int family, const char *addr, int flags)
 {
    int i;
@@ -180,6 +232,10 @@ int search_router(proto_addr_t *pa, char *addr)
 }
 
 
+/*! This function recursively removes all entries from the protocol address
+ * list if the entries are older than MAX_AGE seconds.
+ * @param pa Pointer to protocol address list.
+ */
 void pa_cleanup0(proto_addr_t *pa)
 {
    char addr[64];
@@ -193,8 +249,13 @@ void pa_cleanup0(proto_addr_t *pa)
          continue;
       j++;
 
+      // recursively clean sub-entries
       if (pa->list[i].cnt)
          pa_cleanup0(&pa->list[i]);
+
+      // do not remove this entry if there are still sub-entries
+      if (pa->list[i].cnt)
+         continue;
  
       // ignore young entries
       if (pa->list[i].age + MAX_AGE > t)
@@ -208,6 +269,9 @@ void pa_cleanup0(proto_addr_t *pa)
 }
 
 
+/*! Clean mac address table of old entries. This function is thread-safe.
+ * @param pa Pointer to protocol address list.
+ */
 void pa_cleanup(proto_addr_t *pa)
 {
    pthread_mutex_lock(&pa->mutex);
@@ -216,6 +280,16 @@ void pa_cleanup(proto_addr_t *pa)
 }
 
 
+/*! Convert a network address of type family to a character string. This
+ * function is similar to inet_ntop(3) but can also convert ethernet addresses
+ * (AF_PACKET).
+ * @param family Adress family (AF_INET, AF_INET6, AD_PACKET).
+ * @param src Pointer to network address.
+ * @param dst Pointer to destination buffer.
+ * @param len Length of destination buffer.
+ * @return The function returns the length of the converted string. In case of
+ * error, -1 is returned.
+ */
 int addr_ntop(int family, const char *src, char *dst, int len)
 {
    if (src == NULL || dst == NULL || len <= 0)

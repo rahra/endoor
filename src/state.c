@@ -15,6 +15,12 @@
 #include "protoaddr.h"
 
 
+/*! Initialize and allocate memory for state table. The state table memory
+ * itself (st->state) shall be freed after use again with a call to free().
+ * @param st Pointer to uninitialized state table struct.
+ * @param n Maximum number of state entries.
+ * @return On success 0 is returned. In case of error -1 is returned.
+ */
 int new_state_table(state_table_t *st, int n)
 {
    memset(st, 0, sizeof(*st));
@@ -29,6 +35,11 @@ int new_state_table(state_table_t *st, int n)
 }
 
 
+/*! Get index if an unused state entry.
+ * @param st Pointer to state table struct.
+ * @return The function returnes a integer of an empty state entry. If the
+ * state table is full, st->size is returned.
+ */
 int get_unused_state0(const state_table_t *st)
 {
    int i;
@@ -51,6 +62,7 @@ static uint16_t get_u16(void *buf)
  * @param st Pointer to state table.
  * @param ih Pointer to IPv4 header.
  * @param len Total length of bytes available, starting at ih.
+ * @param dir Direction of the frame which is either INCOMING or OUTGOING.
  * @return If the packet does not match minimum criteria, -1 is returned. If a
  * state was found, the index of the valid entry in the state table is
  * returned, which is 0 <= index < st->size. If no valid entry is found
@@ -151,6 +163,9 @@ int has_ip_state0(state_table_t *st, struct iphdr *ih, int len, int dir)
 }
 
 
+/*! This function works exactly in the same way has has_ip_state0() except for
+ * IPV6. See there for more information.
+ */
 int has_ipv6_state0(state_table_t *st, struct ip6_hdr *ih, int len, int dir)
 {
    int i, j;
@@ -221,6 +236,19 @@ int has_ipv6_state0(state_table_t *st, struct ip6_hdr *ih, int len, int dir)
 }
 
 
+/*! This function checks if there is a state in the state table for the frame
+ * in buf.
+ * @param st Pointer to state table struct.
+ * @param eh Pointer to the beginning of the frame.
+ * @param len Length of the frame.
+ * @param dir Direction that should be considered. This is either INCOMING or
+ * OUTGOING.
+ * @return If a state was found, the function returns an index to the state
+ * which is 0 <= index < st->state. If no valid state was found, st->size is
+ * returned. In case of error, -1 is returned. Errors are unsupported ether
+ * types, frames are somehow illformed (too short or somehow invalid), or the
+ * layer 4 protocol is not supported.
+ */
 int has_state0(state_table_t *st, struct ether_header *eh, int len, int dir)
 {
    switch (ntohs(eh->ether_type))
@@ -236,6 +264,9 @@ int has_state0(state_table_t *st, struct ether_header *eh, int len, int dir)
 }
 
 
+/*! This function is exactly the same as has_state0() but is thread safe.
+ * Generally only this function should be called.
+ */
 int has_state(state_table_t *st, struct ether_header *eh, int len, int dir)
 {
    int res;
@@ -247,6 +278,13 @@ int has_state(state_table_t *st, struct ether_header *eh, int len, int dir)
 }
 
 
+/*! Set the state st according to the packet ih of length len.
+ * @param st Pointer to state struct.
+ * @param ih Pointer to IPV4 header.
+ * @param len Length of pointed to by ih.
+ * @return On success the layer 5 protocol number is returned. If the protocol
+ * is not supported the protocol is returned as negativ value.
+ */
 int add_ip_state0(state_t *st, struct iphdr *ih, int len)
 {
    int hlen = ih->ihl * 4;
@@ -277,6 +315,8 @@ int add_ip_state0(state_t *st, struct iphdr *ih, int len)
 }
 
 
+/*! This function is the IPV6 version of add_ip_state0().
+ */
 int add_ipv6_state0(state_t *st, struct ip6_hdr *ih, int len)
 {
    if (/*ih->ip6_nxt != IPPROTO_ICMP ||*/ ih->ip6_nxt != IPPROTO_UDP || ih->ip6_nxt != IPPROTO_TCP)
@@ -293,6 +333,19 @@ int add_ipv6_state0(state_t *st, struct ip6_hdr *ih, int len)
 }
 
 
+/*! This function updates an existing state. If no such state exists, a new
+ * state is added if the parameter add is != 0.
+ * @param st Pointer to state table struct.
+ * @param eh Pointer to the frame.
+ * @param len Total length of the frame.
+ * @param dir Direction which should be considered. This is either INCOMING or
+ * OUTGOING.
+ * @param add If this is not 0, a new state is added if no suitable state
+ * exists yet.
+ * @return On success, the function returns the index of the state which is 0
+ * <= index < st->state. If the state does not exists or could not be added, -1
+ * is returned.
+ */
 int update_state0(state_table_t *st, struct ether_header *eh, int len, int dir, int add)
 {
    int i, res;
@@ -337,6 +390,15 @@ int update_state0(state_table_t *st, struct ether_header *eh, int len, int dir, 
 }
 
 
+/*! This function updates an existing state.
+ * @param st Pointer to state table struct.
+ * @param eh Pointer to the frame.
+ * @param len Total length of the frame.
+ * @param dir Direction which should be considered. This is either INCOMING or
+ * OUTGOING.
+ * @return On success, the function returns the index of the state which is 0
+ * <= index < st->state. If the state does not exist, -1 is returned.
+ */
 int update_state_if_exists(state_table_t *st, struct ether_header *eh, int len, int dir)
 {
    int res;
@@ -348,6 +410,16 @@ int update_state_if_exists(state_table_t *st, struct ether_header *eh, int len, 
 }
 
 
+/*! This function updates an existing state or adds a new state if no state
+ * does yet exist.
+ * @param st Pointer to state table struct.
+ * @param eh Pointer to the frame.
+ * @param len Total length of the frame.
+ * @param dir Direction which should be considered. This is either INCOMING or
+ * OUTGOING.
+ * @return On success, the function returns the index of the state which is 0
+ * <= index < st->state. If the state could not be added, -1 is returned.
+ */
 int update_state(state_table_t *st, struct ether_header *eh, int len, int dir)
 {
    int res;
@@ -359,6 +431,10 @@ int update_state(state_table_t *st, struct ether_header *eh, int len, int dir)
 }
 
 
+/*! This function removes all states of the state table which are older than
+ * MAX_STATE_AGE (defined in state.h).
+ * @param st Pointer to state table struct.
+ */
 void cleanup_states(state_table_t *st)
 {
    time_t t = time(NULL);
@@ -384,6 +460,15 @@ void cleanup_states(state_table_t *st)
 }
 
 
+/*! This function prints the whole state table to the buffer buf. The function
+ * always writes a \0-terminated string to buf.
+ * @param st Pointer to state table struct.
+ * @param buf Pointer to destination buffer.
+ * @param len Length of destination buffer.
+ * @return The function returns the number of bytes written to buf excluding
+ * the terminating \0. Thus it a value < len is returned. If the buffer was too
+ * small, len is returned. In any case buf will be \0-terminated.
+ */
 int snprint_states(state_table_t *st, char *buf, int len)
 {
    int i, j, wlen, tlen = 0;
@@ -435,5 +520,4 @@ int snprint_states(state_table_t *st, char *buf, int len)
 
    return tlen;
 }
-
 
