@@ -205,7 +205,7 @@ void cli(if_info_t *ii, int n)
 
    for (running = 1; running;)
    {
-      printf("# ");
+      printf("endoor# ");
       if (fgets(buf, sizeof(buf), stdin) == NULL)
          break;
 
