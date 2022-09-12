@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#include "rwpack.h"
+#include "endoor.h"
 #include "pcap.h"
 #include "log.h"
 #include "bridge.h"

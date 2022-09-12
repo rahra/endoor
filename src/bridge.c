@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 #include "bridge.h"
-#include "rwpack.h"
+#include "endoor.h"
 #include "pcap.h"
 #include "log.h"
 #include "tun.h"
