@@ -264,9 +264,10 @@ int tun_ipv6_config(const char *dev, const struct in6_addr *addr, int prefix_len
  */
 int tun_ipv4_config(const char *dev, const struct in_addr *addr, const struct in_addr *netmask)
 {
+   char addrstr[32], nmstr[32];
    int sockfd;
 
-   log_msg(LOG_INFO, "setting interface IPv4 address %s/%s", inet_ntoa(*addr), inet_ntoa(*netmask));
+   log_msg(LOG_INFO, "setting interface IPv4 address %s/%s", inet_ntop(AF_INET, addr, addrstr, sizeof(addrstr)), inet_ntop(AF_INET, netmask, nmstr, sizeof(nmstr)));
    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
    {
       log_msg(LOG_ERR, "failed to create temp socket: %s", strerror(errno));
