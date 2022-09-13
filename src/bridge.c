@@ -44,12 +44,27 @@
 #define SNAPLEN 4096
 
 
+/*! This is an accept filter. It always return FI_ACCEPT without any other
+ * action.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer.
+ * @param len Length of data in buffer.
+ * @return The function returns FI_ACCEPT.
+ */
 int filter_accept(if_info_t *ii, char *buf, int len)
 {
    return FI_ACCEPT;
 }
 
 
+/*! This is the filter for all frames arriving on the inside interface. If an
+ * ARP request or reply is received, the IP address is extraced and set on the
+ * tunnel interface.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer.
+ * @param len Length of data in buffer.
+ * @return The function returns FI_ACCEPT.
+ */
 int filter_in_inside(if_info_t *ii, char *buf, int len)
 {
    struct in_addr netmask;
@@ -78,6 +93,15 @@ int filter_in_inside(if_info_t *ii, char *buf, int len)
 }
 
 
+/*! This s the filter for all frames incoming on the outside interface. All
+ * packets are matched against the state table.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer.
+ * @param len Length of data in buffer.
+ * @return The function returns FI_ACCEPT if no state was found meaning that it
+ * should be forwarded to the inside interface. FI_DROP is returned if a state
+ * matched. The state is updated.
+ */
 int filter_in_outside(if_info_t *ii, char *buf, int len)
 {
    if (update_state_if_exists(ii->st, (struct ether_header*) buf, len, INCOMING) < 0)
@@ -87,6 +111,15 @@ int filter_in_outside(if_info_t *ii, char *buf, int len)
 }
 
 
+/*! This is the filter for all frames which go out on the tunnel interface. It
+ * maintains the state table.
+ * protocols are dropped.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer.
+ * @param len Length of data in buffer.
+ * @return The function returns FI_ACCEPT if a state could be maintained. If
+ * the protocol is unsupported, FI_DROP is returned.
+ */
 int filter_out_tunnel(if_info_t *ii, char *buf, int len)
 {
    struct ether_header *eh = (struct ether_header*) buf;
@@ -124,6 +157,18 @@ int filter_out_tunnel(if_info_t *ii, char *buf, int len)
 }
 
 
+/*! This is the basic frame processor.
+ * It observes all incoming frames and updates the mac address table
+ * accordingly.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer which should point to the beginning of an
+ * Ethernet frame.
+ * @param len Length of data in buffer.
+ * @return The function returns FI_ACCEPT if the packet shall be forwarded and
+ * FI_DROP of it shall be dropped. The latter case occurs for all outgoing
+ * frames with the local address since promisious mode captures both directions
+ * and not just incoming.
+ */
 int proc_src_addr(if_info_t *ii, const char *buf, int len)
 {
    struct ether_header *eh = (struct ether_header*) buf;
@@ -200,25 +245,47 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
 }
 
 
+/*! This function is a wrapper for write(2) outputting some log information in
+ * case of error.
+ * @param ii Pointer to interface info struct.
+ * @param buf Pointer to data buffer.
+ * @param len Length of data in buffer.
+ * @return The function returns the number of bytes written or -1 in case of
+ * error (see write(2)).
+ */
 int write_out(if_info_t *ii, const char *buf, int len)
 {
    int wlen;
 
-      if ((wlen = write(ii->fd, buf + ii->off, len - ii->off)) == -1)
-      {
-         log_msg(LOG_ERR, "write() to %s failed: %s (%d bytes)", ii->ifname, strerror(errno), len - ii->off);
-    return -1;
-      }
+   if ((wlen = write(ii->fd, buf + ii->off, len - ii->off)) == -1)
+   {
+      log_msg(LOG_ERR, "write() to %s failed: %s (%d bytes)", ii->ifname, strerror(errno), len - ii->off);
+      return -1;
+   }
 
-      if (wlen < len - ii->off)
-         log_msg(LOG_NOTICE, "short write() to %s: %d < %d", ii->ifname, wlen, len);
-      /*else
-         log_msg(LOG_DEBUG, "%d bytes written to fd %d", wlen, ii->out->fd);*/
+   if (wlen < len - ii->off)
+      log_msg(LOG_NOTICE, "short write() to %s: %d < %d", ii->ifname, wlen, len);
+   /*else
+      log_msg(LOG_DEBUG, "%d bytes written to fd %d", wlen, ii->out->fd);*/
 
-      return wlen;
+   return wlen;
 }
  
 
+/*! This is the frame forwarder.
+ * It receives frames processes it through proc_src_addr() and the calls the
+ * filter. If proc_src_addr() returns FI_DROP, the frame is dropped and the
+ * next incoming frame is processed.
+ * If proc_src_addr() returns FI_ACCEPT, the filter is called. If the filter
+ * returns FI_ACCEPT the frame is forwarded to the interface defined as out. If
+ * the filter returns FI_DROP, the frame is forwarded to the interface defined
+ * as gate (if not NULL).
+ * The bridge receiver is started in a thread by pthread_create(3). There is
+ * one bridge receiver thread per interface (so 3 in total, 1 for inside, 1 for
+ * outside, 1 for the tunnel).
+ * @param p Pointer to an interface info struct.
+ * @return The function returns NULL.
+ */
 void *bridge_receiver(void *p)
 {
    if_info_t *ii = p;
