@@ -9,6 +9,16 @@ fi
 
 sysctl -w net.ipv4.conf.all.forwarding=0
 sysctl -w net.ipv6.conf.all.forwarding=0
-sysctl -w net.ipv6.conf.$ENDOOR_VICTIM.autoconf=0
-sysctl -w net.ipv6.conf.$ENDOOR_NETWORK.accept_ra=0
+
+for net in $ENDOOR_VICTIM $ENDOOR_NETWORK
+do
+   sysctl -w net.ipv6.conf.$net.autoconf=0
+   sysctl -w net.ipv6.conf.$net.accept_ra=0
+
+   iptables -A INPUT -i $net -j DROP
+   iptables -A OUTPUT -o $net -j DROP
+
+   ip6tables -A INPUT -i $net -j DROP
+   ip6tables -A OUTPUT -o $net -j DROP
+done
 
