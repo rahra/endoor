@@ -116,10 +116,19 @@ Currently this is TCP, UDP, and ICMP echo requests.
 But that's more than enough for now, you can e.g. `nmap` through it ;)
 
 
-# Transparency
-
-
 # Detectability
 
+## Physical detection
 
+## Bridge transparency
+
+## Self-revealed
+
+## Timing
+
+## State collisions
+
+## Switch port state
+
+## Traffic analysis
 
