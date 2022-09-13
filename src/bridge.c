@@ -66,7 +66,7 @@ int filter_tun_out(if_info_t *ii, char *buf, int len)
 
    if (ntohs(eh->ether_type) != ETHERTYPE_IP)
    {
-      log_msg(LOG_NOTICE, "ethertype 0x%04x not implemented yet, dropping", ntohs(eh->ether_type));
+      log_msg(LOG_INFO, "ethertype 0x%04x on %s not implemented yet", ntohs(eh->ether_type), ii->ifname);
       return FI_DROP;
    }
 
@@ -74,7 +74,7 @@ int filter_tun_out(if_info_t *ii, char *buf, int len)
    if (!ii->out->out->hwclient_valid)
    {
       pthread_mutex_unlock(&ii->out->out->mutex);
-      log_msg(LOG_NOTICE, "no valid client address yet found");
+      log_msg(LOG_NOTICE, "no valid client address yet found on %s", ii->out->out->ifname);
       return FI_DROP;
    }
    HWADDR_COPY(buf + ETHER_ADDR_LEN, ii->out->out->hwclient);
@@ -84,7 +84,7 @@ int filter_tun_out(if_info_t *ii, char *buf, int len)
    if (!ii->out->router_valid)
    {
       pthread_mutex_unlock(&ii->out->mutex);
-      log_msg(LOG_NOTICE, "no valid router address yet found");
+      log_msg(LOG_NOTICE, "no valid router address yet found on %s", ii->out->ifname);
       return FI_DROP;
    }
    HWADDR_COPY(buf, ii->out->hwrouter);
@@ -111,7 +111,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
 
    if (len < sizeof(*eh))
    {
-      log_msg(LOG_ERR, "frame too short");
+      log_msg(LOG_WARNING, "frame of %d bytes too short on %s", len, ii->ifname);
       return FI_ACCEPT;
    }
 
@@ -183,7 +183,7 @@ int write_out(if_info_t *ii, const char *buf, int len)
       }
 
       if (wlen < len - ii->off)
-         log_msg(LOG_NOTICE, "short write %d < %d", wlen, len);
+         log_msg(LOG_NOTICE, "short write() to %s: %d < %d", ii->ifname, wlen, len);
       /*else
          log_msg(LOG_DEBUG, "%d bytes written to fd %d", wlen, ii->out->fd);*/
 
@@ -199,7 +199,7 @@ void *bridge_receiver(void *p)
 
    // safety check
    if (ii == NULL)
-      log_msg(LOG_ERR, "ii == NULL"), exit(1);
+      log_msg(LOG_EMERG, "ii == NULL"), exit(1);
 
    if (ii->filter == NULL)
       ii->filter = filter_accept;
@@ -211,11 +211,16 @@ void *bridge_receiver(void *p)
    {
       memset(buf, 0, ii->off);
       if ((len = read(ii->fd, buf + ii->off, sizeof(buf) - ii->off)) == -1)
-         log_msg(LOG_ERR, "read(): %s", strerror(errno)), exit(1);
+      {
+         log_msg(LOG_ERR, "read() on %s failed: %s. retrying soon...", ii->ifname, strerror(errno));
+         sleep(10);
+         continue;
+      }
 
       if (!len)
       {
-         log_msg(LOG_NOTICE, "EOF on fd %d", ii->fd);
+         log_msg(LOG_NOTICE, "received EOF on %s (fd = %d)", ii->ifname, ii->fd);
+         // FIXME: terminate properly...or whatelse?
          return NULL;
       }
 

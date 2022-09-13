@@ -98,7 +98,7 @@ void if_maintainer(if_info_t *ii)
       pthread_mutex_lock(&ii->mutex);
       if (HWADDR_CMP(ii->hwrouter, hwaddr))
       {
-         log_msg(LOG_INFO, "router address changed");
+         log_msg(LOG_NOTICE, "router address changed on %s", ii->ifname);
          HWADDR_COPY(ii->hwrouter, hwaddr);
          ii->router_valid = 1;
       }

@@ -202,7 +202,10 @@ int tun_config(int fd, char *dev, int devlen)
       strlcpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name));
 
    if (ioctl(fd, TUNSETIFF, (void *) &ifr) < 0)
-      log_msg(LOG_EMERG, "could not set TUNSETIFF: %s", strerror(errno)), exit(1);
+   {
+      log_msg(LOG_ERR, "could not set TUNSETIFF: %s", strerror(errno));
+      return -1;
+   }
 
    if (dev != NULL)
       strlcpy(dev, ifr.ifr_name, devlen);
@@ -223,7 +226,7 @@ int tun_ipv6_config(const char *dev, const struct in6_addr *addr, int prefix_len
    inet_ntop(AF_INET6, addr, astr, INET6_ADDRSTRLEN);
    int sockfd;
 
-   log_msg(LOG_INFO, "setting interface IPv6 address %s/%d", astr, prefix_len);
+   log_msg(LOG_NOTICE, "setting interface IPv6 address %s/%d", astr, prefix_len);
    if ((sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP)) == -1)
    {
       log_msg(LOG_ERR, "failed to create temp socket: %s", strerror(errno));
@@ -267,7 +270,7 @@ int tun_ipv4_config(const char *dev, const struct in_addr *addr, const struct in
    char addrstr[32], nmstr[32];
    int sockfd;
 
-   log_msg(LOG_INFO, "setting interface IPv4 address %s/%s", inet_ntop(AF_INET, addr, addrstr, sizeof(addrstr)), inet_ntop(AF_INET, netmask, nmstr, sizeof(nmstr)));
+   log_msg(LOG_NOTICE, "setting interface IPv4 address %s/%s", inet_ntop(AF_INET, addr, addrstr, sizeof(addrstr)), inet_ntop(AF_INET, netmask, nmstr, sizeof(nmstr)));
    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
    {
       log_msg(LOG_ERR, "failed to create temp socket: %s", strerror(errno));
@@ -350,7 +353,7 @@ int tun_alloc(char *dev, int dev_s)
    log_debug("opening tun \"%s\"", tun_dev_);
    if ((fd = open(tun_dev_, O_RDWR)) == -1)
    {
-      log_msg(LOG_EMERG, "could not open tundev %s: %s", tun_dev_, strerror(errno));
+      log_msg(LOG_ERR, "could not open tundev %s: %s", tun_dev_, strerror(errno));
       return -1;
    }
 

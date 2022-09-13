@@ -382,13 +382,21 @@ int update_state0(state_table_t *st, struct ether_header *eh, int len, int dir, 
          log_msg(LOG_ERR, "state table full");
          return -1;
       }
-      if (eh->ether_type == htons(ETHERTYPE_IP))
-         res = add_ip_state0(&st->state[i], (struct iphdr*) (eh + 1), len - sizeof(*eh));
-      else if (eh->ether_type == htons(ETHERTYPE_IPV6))
-         res = add_ipv6_state0(&st->state[i], (struct ip6_hdr*) (eh + 1), len - sizeof(*eh));
-      // this should never happen...
-      else
-         return -1;
+
+      switch (ntohs(eh->ether_type))
+      {
+         case ETHERTYPE_IP:
+            res = add_ip_state0(&st->state[i], (struct iphdr*) (eh + 1), len - sizeof(*eh));
+            break;
+
+         case ETHERTYPE_IPV6:
+            res = add_ipv6_state0(&st->state[i], (struct ip6_hdr*) (eh + 1), len - sizeof(*eh));
+            break;
+
+         default:
+            log_msg(LOG_EMERG, "unknown ethertype %d", ntohs(eh->ether_type));
+            return -1;
+      }
 
       if (res <= 0)
       {
@@ -466,7 +474,7 @@ void cleanup_states(state_table_t *st)
       j++;
       if (st->state[i].age + MAX_STATE_AGE < t)
       {
-         log_msg(LOG_INFO, "deleting state");
+         log_msg(LOG_DEBUG, "deleting state %d", i);
          st->state[i].family = 0;
          st->num--;
       }
@@ -519,7 +527,7 @@ int snprint_states(state_table_t *st, char *buf, int len)
       }
       else
       {
-         log_msg(LOG_ERR, "unknown address family in state table");
+         log_msg(LOG_EMERG, "unknown address family %d in state table", st->state[i].family);
          continue;
       }
 
