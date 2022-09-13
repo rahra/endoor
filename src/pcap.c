@@ -1,11 +1,20 @@
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
-#include <sys/stat.h>
-#include <sys/time.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
 
 #include "log.h"
 #include "pcap.h"

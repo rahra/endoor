@@ -22,19 +22,37 @@
  *  \date 2019/09/08
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
+#ifdef HAVE_LINUX_IF_H
 #include <linux/if.h>
+#endif
+#ifdef HAVE_LINUX_IF_TUN_H
 #include <linux/if_tun.h>
+#endif
+#ifdef HAVE_LINUX_IPV6_H
 #include <linux/ipv6.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 
 #include "endoor.h"
 #include "log.h"

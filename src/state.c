@@ -1,13 +1,25 @@
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
+#endif
+#ifdef HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
+#endif
+#ifdef HAVE_NET_ETHERNET_H
 #include <net/ethernet.h>
+#endif
 
 #include "log.h"
 #include "state.h"

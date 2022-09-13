@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#ifdef HAVE_NETINET_IP6_H
+#include <netinet/ip6.h>
+#endif
 
 #include "bridge.h"
 #include "endoor.h"

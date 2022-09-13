@@ -21,14 +21,22 @@
  *  @version 2008/10/1
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <syslog.h>
 #include <pthread.h>
 #include <errno.h>
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 
 #include "log.h"
 

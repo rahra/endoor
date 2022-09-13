@@ -29,7 +29,9 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
+#endif
 
 #define LOG_FCONN 0x400
 #define LOG_FERR 0x800

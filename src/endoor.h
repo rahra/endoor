@@ -31,12 +31,24 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
+#endif
+#ifdef HAVE_NETINET_IP6_h
 #include <netinet/ip6.h>
+#endif
+#ifdef HAVE_NETINET_ICMP6_H
 #include <netinet/icmp6.h>
+#endif
+#ifdef HAVE_NETINET_ETHER_H
 #include <netinet/ether.h>
+#endif
 
 #ifdef UNUSED
 #elif defined(__GNUC__)

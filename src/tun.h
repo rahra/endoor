@@ -25,6 +25,10 @@
 #ifndef TUN_H
 #define TUN_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 int mk_in6_mask(struct in6_addr *msk, int prefixlen);
 int sin_set_addr(struct sockaddr_in *sin, const struct in_addr *addr);
 int sin6_set_addr(struct sockaddr_in6 *sin6, const struct in6_addr *addr);

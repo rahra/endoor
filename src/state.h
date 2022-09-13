@@ -1,8 +1,14 @@
 #ifndef STATE_H
 #define STATE_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <pthread.h>
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
 
 #define MAX_STATE_AGE 180
 

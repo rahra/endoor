@@ -1,19 +1,40 @@
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <linux/if_packet.h>
-#include <net/if.h>
-#include <errno.h>
-#include <syslog.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <pthread.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+#ifdef HAVE_LINUX_IF_PACKET_H
+#include <linux/if_packet.h>
+#endif
+#ifdef HAVE_NET_IF_H
+#include <net/if.h>
+#endif
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #include "endoor.h"
 #include "pcap.h"
@@ -203,6 +224,7 @@ void cli(if_info_t *ii, int n)
    char *s, *eptr;
    char buf[65536];
 
+   printf("Welcome to %s!\n", PACKAGE_STRING);
    for (running = 1; running;)
    {
       printf("endoor# ");
@@ -236,6 +258,7 @@ void cli(if_info_t *ii, int n)
          printf("%s\n", buf);
       }
    }
+   printf("Good bye!\n");
 }
 
 
@@ -251,7 +274,7 @@ int main(int argc, char **argv)
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
    strlcpy(ii[0].ifname, "eth1", sizeof(ii[0].ifname));
 
-   while ((c = getopt(argc, argv, "dhi:o:w:")) != -1)
+   while ((c = getopt(argc, argv, "dhi:o:vw:")) != -1)
    {
       switch (c)
       {
@@ -270,6 +293,10 @@ int main(int argc, char **argv)
          case 'o':
             strlcpy(ii[1].ifname, optarg, sizeof(ii[1].ifname));
             break;
+
+         case 'v':
+            printf("%s\n", PACKAGE_STRING);
+            exit(0);
 
          case 'w':
             pcapname = optarg;

@@ -6,7 +6,9 @@
 #endif
 
 #include <pthread.h>
+#ifdef HAVE_LINUX_IF_H
 #include <linux/if.h>
+#endif
 
 #include "endoor.h"
 #include "pcap.h"
