@@ -16,8 +16,6 @@
 
 #define SNAPLEN 4096
 
-static int tun_setup_ = 0;
-
 
 int filter_accept(if_info_t *ii, char *buf, int len)
 {
@@ -71,13 +69,6 @@ int filter_tun_out(if_info_t *ii, char *buf, int len)
       log_msg(LOG_NOTICE, "ethertype 0x%04x not implemented yet, dropping", ntohs(eh->ether_type));
       return FI_DROP;
    }
-#if 0
-   if (!tun_setup_)
-   {
-      log_msg(LOG_NOTICE, "tun dev not yet setup sufficiently");
-      return FI_DROP;
-   }
-#endif
 
    pthread_mutex_lock(&ii->out->out->mutex);
    if (!ii->out->out->hwclient_valid)
@@ -132,11 +123,6 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    }
    ether_ntoa_r(addr, addrstr);
 
-#if 0
-   if (!(eh->ether_dst[0] & 1))
-      (void) mac_update(&ii->dst_mtbl, AF_PACKET, eh->ether_dst, eh->ether_dst);
-#endif
-
    switch (ntohs(eh->ether_type))
    {
       case ETHERTYPE_ARP:
@@ -188,12 +174,12 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
 
 int write_out(if_info_t *ii, const char *buf, int len)
 {
-	int wlen;
+   int wlen;
 
       if ((wlen = write(ii->fd, buf + ii->off, len - ii->off)) == -1)
       {
          log_msg(LOG_ERR, "write() to %s failed: %s (%d bytes)", ii->ifname, strerror(errno), len - ii->off);
-	 return -1;
+    return -1;
       }
 
       if (wlen < len - ii->off)
@@ -208,7 +194,7 @@ int write_out(if_info_t *ii, const char *buf, int len)
 void *bridge_receiver(void *p)
 {
    if_info_t *ii = p;
-   int len, wlen, fd;
+   int len;
    char buf[SNAPLEN];
 
    // safety check
@@ -238,7 +224,6 @@ void *bridge_receiver(void *p)
       //log_msg(LOG_DEBUG, "%d bytes received on %s", len, ii->ifname);
       //log_hex(buf, len);
 
-      //if (!strcmp(ii->ifname, "eth1"))
       save_packet(ii->wfd, buf, len);
 
       if (proc_src_addr(ii, buf, len) == FI_DROP)
@@ -246,16 +231,15 @@ void *bridge_receiver(void *p)
 
       if (ii->filter(ii, buf, len) == FI_DROP)
       {
-         if (ii->gate == NULL)
-            continue;
+         if (ii->gate != NULL)
+         {
+            log_msg(LOG_DEBUG, "diverting to %s", ii->gate->ifname);
+            write_out(ii->gate, buf, len);
+         }
+         continue;
+      }
 
-         log_msg(LOG_DEBUG, "diverting to %s", ii->gate->ifname);
-	 write_out(ii->gate, buf, len);
-      }
-      else
-      {
-	      write_out(ii->out, buf, len);
-      }
+      write_out(ii->out, buf, len);
    }
 
    return NULL;

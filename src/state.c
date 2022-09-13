@@ -376,11 +376,11 @@ int update_state0(state_table_t *st, struct ether_header *eh, int len, int dir, 
 
       if (res <= 0)
       {
-         log_msg(LOG_WARNING, "l4 protocol %d not supported", -res);
+         log_msg(LOG_NOTICE, "l4 protocol %d not supported", -res);
          return -1;
       }
 
-      log_msg(LOG_INFO, "adding state: i = %d, type = 0x%04x, protocol = %d", i, ntohs(eh->ether_type), res);
+      log_msg(LOG_DEBUG, "adding state: i = %d, type = 0x%04x, protocol = %d", i, ntohs(eh->ether_type), res);
       st->num++;
    }
 
