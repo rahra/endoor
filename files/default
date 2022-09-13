@@ -1,0 +1,7 @@
+# network if to the victim
+ENDOOR_VICTIM=eth0
+# network if to the network
+ENDOOR_NETWORK=eth1
+# additional options
+ENDOOR_OPTS=
+

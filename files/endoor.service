@@ -1,0 +1,12 @@
+[Unit]
+Description=Endoor
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/default/endoor
+ExecStart=/usr/bin/screen -dm /usr/local/bin/endoor -i $ENDOOR_VICTIM -o $ENDOOR_NETWORK $ENDOOR_OPTS
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
+

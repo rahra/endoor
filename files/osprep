@@ -1,12 +1,14 @@
 #!/bin/sh
 
-VICTIM=eth0
-NETWORK=eth1
+if test -e /etc/default/endoor ; then
+   . /etc/default/endoor
+else
+   ENDOOR_VICTIM=eth0
+   ENDOOR_NETWORK=eth1
+fi
 
 sysctl -w net.ipv4.conf.all.forwarding=0
 sysctl -w net.ipv6.conf.all.forwarding=0
-sysctl -w net.ipv6.conf.$VICTIM.autoconf=0
-sysctl -w net.ipv6.conf.$NETWORK.accept_ra=0
-
-echo "start with \`./rwpack -i $VICTIM -o $NETWORK\`"
+sysctl -w net.ipv6.conf.$ENDOOR_VICTIM.autoconf=0
+sysctl -w net.ipv6.conf.$ENDOOR_NETWORK.accept_ra=0
 
