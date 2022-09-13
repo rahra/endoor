@@ -336,7 +336,7 @@ int main(int argc, char **argv)
    ii[1].gate = &ii[2];
    init_mac_table(&ii[1].mtbl, MACTABLESIZE, MACTABLESIZE);
    //ii[1].wfd = create_file(pcapname, SNAPLEN);
-   ii[1].filter = filter_incoming;
+   ii[1].filter = filter_in_outside;
    ii[1].st = &st;
 
    pthread_mutex_init(&ii[0].mutex, NULL);
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
    init_mac_table(&ii[0].mtbl, MACTABLESIZE, MACTABLESIZE);
    //ii[0].wfd = ii[1].wfd;
    ii[0].wfd = create_file(pcapname, SNAPLEN);
-   ii[0].filter = filter_inside_set_ip;
+   ii[0].filter = filter_in_inside;
 
    pthread_mutex_init(&ii[2].mutex, NULL);
    ii[2].fd = tun_alloc(ii[2].ifname, sizeof(ii[2].ifname));
@@ -353,7 +353,7 @@ int main(int argc, char **argv)
    init_mac_table(&ii[2].mtbl, MACTABLESIZE, MACTABLESIZE);
    ii[2].wfd = 0;
    ii[2].off = 10;
-   ii[2].filter = filter_tun_out;
+   ii[2].filter = filter_out_tunnel;
    ii[2].st = &st;
    // set invalid address to tunnel if struct to circument detection of own address which is (0:0:0:0:0:0)
    memset(ii[2].hwaddr, -1, ETHER_ADDR_LEN);

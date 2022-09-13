@@ -50,7 +50,7 @@ int filter_accept(if_info_t *ii, char *buf, int len)
 }
 
 
-int filter_inside_set_ip(if_info_t *ii, char *buf, int len)
+int filter_in_inside(if_info_t *ii, char *buf, int len)
 {
    struct in_addr netmask;
    struct ether_header *eh = (struct ether_header*) buf;
@@ -78,7 +78,7 @@ int filter_inside_set_ip(if_info_t *ii, char *buf, int len)
 }
 
 
-int filter_incoming(if_info_t *ii, char *buf, int len)
+int filter_in_outside(if_info_t *ii, char *buf, int len)
 {
    if (update_state_if_exists(ii->st, (struct ether_header*) buf, len, INCOMING) < 0)
       return FI_ACCEPT;
@@ -87,7 +87,7 @@ int filter_incoming(if_info_t *ii, char *buf, int len)
 }
 
 
-int filter_tun_out(if_info_t *ii, char *buf, int len)
+int filter_out_tunnel(if_info_t *ii, char *buf, int len)
 {
    struct ether_header *eh = (struct ether_header*) buf;
 

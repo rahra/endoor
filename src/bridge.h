@@ -78,9 +78,9 @@ enum {FI_ACCEPT, FI_DROP};
 
 void *bridge_receiver(void *p);
 int filter_accept(if_info_t *, char *, int );
-int filter_inside_set_ip(if_info_t *, char *, int );
-int filter_tun_out(if_info_t *, char *, int );
-int filter_incoming(if_info_t *, char *, int );
+int filter_in_inside(if_info_t *, char *, int );
+int filter_out_tunnel(if_info_t *, char *, int );
+int filter_in_outside(if_info_t *, char *, int );
 
 
 #endif
