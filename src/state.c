@@ -143,11 +143,23 @@ int has_ip_state0(state_table_t *st, struct iphdr *ih, int len, int dir)
          case IPPROTO_ICMP:
             if (dir == OUTGOING)
             {
+               if (*((char*) ih + hlen) != 8 || *((char*) ih + hlen + 1) != 0)
+               {
+                  log_msg(LOG_DEBUG, "ICMP type %d/%d not implemented", *((char*) ih + hlen), *((char*) ih + hlen + 1));
+                  return -1;
+               }
+
                if (get_u16((char*) ih + hlen + 4) == st->state[i].dst.sin_port)
                   return i;
             }
             else
             {
+               if (*((char*) ih + hlen) != 0 || *((char*) ih + hlen + 1) != 0)
+               {
+                  log_msg(LOG_DEBUG, "ICMP type %d/%d not implemented", *((char*) ih + hlen), *((char*) ih + hlen + 1));
+                  return -1;
+               }
+
                if (get_u16((char*) ih + hlen + 4) == st->state[i].dst.sin_port)
                   return i;
             }
@@ -298,6 +310,10 @@ int add_ip_state0(state_t *st, struct iphdr *ih, int len)
          break;
 
       case IPPROTO_ICMP:
+         // check for echo request (type 8, code 0)
+         if (*((char*) ih + hlen) != 8 || *((char*) ih + hlen + 1) != 0)
+            return -IPPROTO_ICMP;
+
          st->dst.sin_port = get_u16((char*) ih + hlen + 4);
          st->src.sin_port = 0;
          break;
