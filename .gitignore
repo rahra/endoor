@@ -1,5 +1,6 @@
 *.o
 *~
+*.tar.gz
 endoor
 Makefile
 Makefile.in

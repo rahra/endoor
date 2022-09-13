@@ -291,6 +291,8 @@ int has_state(state_table_t *st, struct ether_header *eh, int len, int dir)
 
 
 /*! Set the state st according to the packet ih of length len.
+ * It must have been checked that len is long enough, i.e. at least ihl + 6
+ * bytes.
  * @param st Pointer to state struct.
  * @param ih Pointer to IPV4 header.
  * @param len Length of pointed to by ih.

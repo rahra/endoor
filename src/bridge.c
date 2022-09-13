@@ -153,6 +153,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
             {
                case ND_ROUTER_ADVERT:
                   flags = PA_ROUTER;
+                  /* fall through */
                case ND_NEIGHBOR_SOLICIT:
                case ND_NEIGHBOR_ADVERT:
                case ND_ROUTER_SOLICIT:
