@@ -1,25 +1,27 @@
-/* Copyright 2008-2019 Bernhard R. Fischer.
+/* Copyright 2022 Bernhard R. Fischer.
  *
- * This file is part of OnionCat.
+ * This file is part of Endoor.
  *
- * OnionCat is free software: you can redistribute it and/or modify
+ * Endoor is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * OnionCat is distributed in the hope that it will be useful,
+ * Endoor is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with OnionCat. If not, see <http://www.gnu.org/licenses/>.
+ * along with Endoor. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*! \file ocattun.c
- *  These functions create and initialized the TUN/TAP device.
+/*! \file tun.c
+ *  These functions create and initialized the TUN/TAP device. This code is
+ *  mainly derived from my OnionCat project (see
+ *  https://github.com/rahra/onioncat) and was reworked a little bit.
  *
- *  @author Bernhard R. Fischer <rahra _at_ cypherpunk at>
- *  \date 2019/09/08
+ *  \author Bernhard R. Fischer <bf@abenteuerland.at>
+ *  \date 2022/09/13
  */
 
 #ifdef HAVE_CONFIG_H
