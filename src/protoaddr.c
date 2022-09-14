@@ -214,7 +214,8 @@ int update_table(proto_addr_t *pa, const char *hwaddr, int family, const char *a
 #define MIN_HITS 100
 int search_router(proto_addr_t *pa, char *addr)
 {
-   int i, j, max = 0, im, rmax = 0, ir;
+   int i, j, im, ir;
+   unsigned int max = 0, rmax = 0;
 
    pthread_mutex_lock(&pa->mutex);
    for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)

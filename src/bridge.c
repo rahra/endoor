@@ -51,7 +51,7 @@
  * @param len Length of data in buffer.
  * @return The function returns FI_ACCEPT.
  */
-int filter_accept(if_info_t *ii, char *buf, int len)
+int filter_accept(if_info_t *UNUSED(ii), char *UNUSED(buf), int UNUSED(len))
 {
    return FI_ACCEPT;
 }
@@ -73,7 +73,7 @@ int filter_in_inside(if_info_t *ii, char *buf, int len)
 
    if (ntohs(eh->ether_type) == ETHERTYPE_ARP)
    {
-      if (len < sizeof(*eh) + sizeof(*ah))
+      if (len < (int) sizeof(*eh) + (int) sizeof(*ah))
          return FI_ACCEPT;
 
       ah = (struct ether_arp*) (eh + 1);
@@ -181,7 +181,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    char addrstr[32];
    int flags = 0;
 
-   if (len < sizeof(*eh))
+   if (len < (int) sizeof(*eh))
    {
       log_msg(LOG_WARNING, "frame of %d bytes too short on %s", len, ii->ifname);
       return FI_ACCEPT;
@@ -198,7 +198,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    switch (ntohs(eh->ether_type))
    {
       case ETHERTYPE_ARP:
-         if (len < sizeof(*eh) + sizeof(*ah))
+         if (len < (int) sizeof(*eh) + (int) sizeof(*ah))
             return FI_ACCEPT;
 
          //log_msg(LOG_DEBUG, "%s: src = %s, ethertype = 0x%04x", ii->ifname, addrstr, ntohs(eh->ether_type));
@@ -211,13 +211,13 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
          break;
 
       case ETHERTYPE_IPV6:
-         if (len < sizeof(*eh) + sizeof(*i6h))
+         if (len < (int) sizeof(*eh) + (int) sizeof(*i6h))
             return FI_ACCEPT;
 
          i6h = (struct ip6_hdr*) (eh + 1);
          if (i6h->ip6_nxt == IPPROTO_ICMPV6)
          {
-            if (len < sizeof(*eh) + sizeof(*i6h) + sizeof(*icmp6))
+            if (len < (int) sizeof(*eh) + (int) sizeof(*i6h) + (int) sizeof(*icmp6))
                return FI_ACCEPT;
 
             icmp6 = (struct icmp6_hdr*) (i6h + 1);
@@ -299,7 +299,7 @@ void *bridge_receiver(void *p)
    if (ii->filter == NULL)
       ii->filter = filter_accept;
 
-   if (ii->off > sizeof(buf))
+   if (ii->off > (int) sizeof(buf))
       ii->off = sizeof(buf);
 
    for (;;)

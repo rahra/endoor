@@ -18,7 +18,7 @@
 /*! \file endoor.h
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2022/09/14
  */
 
 #ifndef RWPACK_H
@@ -68,9 +68,7 @@
 #endif
 
 #ifndef ETHER_ADDR_LEN
-#ifdef ETHERADDRL
-#define ETHER_ADDR_LEN ETHERADDRL
-#endif
+#define ETHER_ADDR_LEN 6
 #endif
 
 // At least on Solaris the Ethernet addresses are defined as struct containing
@@ -90,10 +88,6 @@
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
-
-int write_packet(const char *, int );
-
-extern char hwaddr_[6];
 
 #endif
 

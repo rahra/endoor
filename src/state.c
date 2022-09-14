@@ -108,7 +108,7 @@ int has_ip_state0(state_table_t *st, struct iphdr *ih, int len, int dir)
    int i, j, hlen;
 
    // safety check
-   if (len < sizeof(*ih))
+   if (len < (int) sizeof(*ih))
    {
       log_msg(LOG_DEBUG, "packet too short for IP");
       return -1;
@@ -218,7 +218,7 @@ int has_ipv6_state0(state_table_t *st, struct ip6_hdr *ih, int len, int dir)
    int i, j;
 
    // check minimum length
-   if (len < sizeof(*ih) + 4)
+   if (len < (int) sizeof(*ih) + 4)
    {
       log_msg(LOG_DEBUG, "packet too short for IPv6");
       return -1;
@@ -332,11 +332,22 @@ int has_state(state_table_t *st, struct ether_header *eh, int len, int dir)
  * @param ih Pointer to IPV4 header.
  * @param len Length of pointed to by ih.
  * @return On success the layer 5 protocol number is returned. If the protocol
- * is not supported the protocol is returned as negativ value.
+ * is not supported the protocol is returned as negativ value. If the packet
+ * length is to short, 0 is returned.
+ * Note: 0 will also be returned, if the protocol number is 0. This protocol is
+ * not supported for IPV4.
  */
 int add_ip_state0(state_t *st, struct iphdr *ih, int len)
 {
-   int hlen = ih->ihl * 4;
+   int hlen;
+
+   // safety check
+   if (len < (int) sizeof(*ih) && len < ih->ihl * 4 + 8)
+   {
+      log_msg(LOG_WARNING, "packet toot short for IPV4 state: %d < %d", len, ih->ihl * 4 + 8);
+      return 0;
+   }
+   hlen = ih->ihl * 4;
 
    switch (ih->protocol)
    {
@@ -372,6 +383,13 @@ int add_ip_state0(state_t *st, struct iphdr *ih, int len)
  */
 int add_ipv6_state0(state_t *st, struct ip6_hdr *ih, int len)
 {
+   // safety check
+   if (len < (int) sizeof(*ih) + 8)
+   {
+      log_msg(LOG_WARNING, "packet toot short for IPV6 state: %d < %ld", len, sizeof(*ih) + 8);
+      return 0;
+   }
+
    if (/*ih->ip6_nxt != IPPROTO_ICMP ||*/ ih->ip6_nxt != IPPROTO_UDP || ih->ip6_nxt != IPPROTO_TCP)
       return -ih->ip6_nxt;
 
