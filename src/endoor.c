@@ -135,7 +135,8 @@ int init_socket(if_info_t *ii)
 
 void if_maintainer(if_info_t *ii)
 {
-   char hwaddr[ETHER_ADDR_LEN];
+   char hwaddr[ETHER_ADDR_LEN], addr[16], netmask[4];
+   int v;
 
    pa_cleanup(&ii->mtbl);
    if (search_router(&ii->mtbl, hwaddr))
@@ -148,6 +149,29 @@ void if_maintainer(if_info_t *ii)
          ii->router_valid = 1;
       }
       pthread_mutex_unlock(&ii->mutex);
+   }
+
+   pthread_mutex_lock(&ii->mutex);
+   v = ii->hwclient_valid;
+   pthread_mutex_unlock(&ii->mutex);
+
+   if (!v && search_client(&ii->mtbl, hwaddr, addr) < ii->mtbl.size)
+   {
+      pthread_mutex_lock(&ii->mutex);
+      v = ii->hwclient_valid;
+      if (!v)
+      {
+         log_msg(LOG_NOTICE, "client identified on %s", ii->ifname);
+         HWADDR_COPY(ii->hwclient, hwaddr);
+         ii->hwclient_valid = 1;
+      }
+      pthread_mutex_unlock(&ii->mutex);
+
+      memset(&netmask, -1, sizeof(netmask));
+      if (!v && ii->out->gate != NULL)
+         tun_ipv4_config(ii->out->gate->ifname, (struct in_addr*) addr, (struct in_addr*) &netmask);
+      else if (v)
+         log_msg(LOG_EMERG, "hwclient was set by other thread");
    }
 }
  

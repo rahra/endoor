@@ -267,6 +267,48 @@ int search_router(proto_addr_t *pa, char *addr)
 }
 
 
+int search_client0(proto_addr_t *pa, char *addr)
+{
+   int i, j;
+
+   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
+   {
+      // ignore empty entries
+      if (!pa->list[i].family)
+         continue;
+      j++;
+
+      if (pa->list[i].flags & PA_CLIENT)
+      {
+         memcpy(addr, pa->list[i].addr, addr_size(pa->list[i].family));
+         return i;
+      }
+   }
+   return pa->size;
+}
+
+
+int search_client(proto_addr_t *pa, char *hwaddr, char *addr)
+{
+   int i, j;
+
+   pthread_mutex_lock(&pa->mutex);
+   if ((i = search_client0(pa, hwaddr)) >= pa->size)
+      goto sc_exit;
+
+   j = i;
+   if ((i = search_client0(&pa->list[i], addr)) >= pa->size)
+      goto sc_exit;
+
+   if (pa->list[j].list[i].family != AF_INET)
+      i = pa->size;
+
+sc_exit:
+   pthread_mutex_unlock(&pa->mutex);
+   return i;
+}
+
+
 /*! This function recursively removes all entries from the protocol address
  * list if the entries are older than MAX_AGE seconds.
  * @param pa Pointer to protocol address list.

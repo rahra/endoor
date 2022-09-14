@@ -79,6 +79,9 @@ int filter_in_inside(if_info_t *ii, char *buf, int len)
       ah = (struct ether_arp*) (eh + 1);
       if (ah->arp_hrd == htons(ARPHRD_ETHER) && ah->arp_pro == htons(ETHERTYPE_IP) && (ah->arp_op == htons(ARPOP_REQUEST) || ah->arp_op == htons(ARPOP_REPLY)) && HWADDR_CMP(ii->hwclient, eh->ether_src))
       {
+#if 1
+         update_table(&ii->mtbl, (char*) eh->ether_src, AF_INET, (char*) ah->arp_spa, PA_CLIENT);
+#else
          log_msg(LOG_INFO, "setting up tun");
          pthread_mutex_lock(&ii->mutex);
          HWADDR_COPY(ii->hwclient, eh->ether_src);
@@ -86,6 +89,7 @@ int filter_in_inside(if_info_t *ii, char *buf, int len)
          pthread_mutex_unlock(&ii->mutex);
          memset(&netmask, -1, sizeof(netmask));
          tun_ipv4_config(ii->out->gate->ifname, (struct in_addr*) ah->arp_spa, &netmask);
+#endif
       }
    }
 
