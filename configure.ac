@@ -17,7 +17,7 @@ AC_C_CONST
 AC_HEADER_STDC
 AC_PROG_EGREP
 
-AC_CHECK_HEADERS([arpa/inet.h endian.h fcntl.h linux/if.h linux/if_packet.h linux/if_tun.h linux/ipv6.h net/ethernet.h net/if.h net/if_tun.h netinet/ether.h netinet/icmp6.h netinet/if_ether.h netinet/in6.h netinet/in.h netinet/ip6.h netinet/ip.h netinet/udp.h net/tun/if_tun.h sys/endian.h sys/ethernet.h sys/ioctl.h syslog.h sys/socket.h sys/stat.h sys/time.h sys/types.h time.h], [], [],
+AC_CHECK_HEADERS([arpa/inet.h endian.h fcntl.h linux/if.h linux/if_packet.h linux/if_tun.h linux/ipv6.h net/ethernet.h net/if.h net/if_tun.h netinet/ether.h netinet/icmp6.h netinet/if_ether.h netinet/in6.h netinet/in.h netinet/ip6.h netinet/ip.h netinet/udp.h net/tun/if_tun.h sys/endian.h sys/ethernet.h sys/ioctl.h syslog.h sys/socket.h sys/time.h time.h], [], [],
 [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
