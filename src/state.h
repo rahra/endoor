@@ -60,9 +60,15 @@ typedef struct state
 
 typedef struct state_table
 {
+   //! max number of available entries in state table
    int size;
+   //! number of used elements in state table
    int num;
+   //! arrray of states
    state_t *state;
+   //! maintainer thread
+   pthread_t th;
+   //! table mutex
    pthread_mutex_t mutex;
 } state_table_t;
 

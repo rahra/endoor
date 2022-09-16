@@ -176,19 +176,32 @@ void if_maintainer(if_info_t *ii)
 }
  
 
-void *maintainer(void *p)
+typedef struct func
 {
-   if_info_t *ii = p;
-   int i;
+   void (*func)(void*);
+   void *p;
+} func_t;
 
+
+void *maintainer(func_t *fs)
+{
    pthread_detach(pthread_self());
    for (;;)
    {
       sleep(10);
+      fs->func(fs->p);
+   }
+}
 
-      for (i = 0; i < 3; i++)
-         if_maintainer(&ii[i]);
-      cleanup_states(ii[2].st);
+
+void run_thread(pthread_t *th, void *(*start)(void*), void *p)
+{
+   int e;
+
+   if ((e = pthread_create(th, NULL, start, p)) != 0)
+   {
+      log_msg(LOG_ERR, "pthread_create() failed: %s", strerror(e));
+      exit(1);
    }
 }
 
@@ -313,7 +326,6 @@ void cli(if_info_t *ii, int n)
 int main(int argc, char **argv)
 {
    int c;
-   pthread_t ordr;
    if_info_t ii[3];
    char *pcapname = NULL;
    state_table_t st;
@@ -384,11 +396,14 @@ int main(int argc, char **argv)
 
    ii[1].wfd = ii[0].wfd;
 
-   pthread_create(&ordr, NULL, maintainer, ii);
+   //pthread_create(&ordr, NULL, maintainer, ii);
 
-   pthread_create(&ordr, NULL, bridge_receiver, &ii[1]);
-   pthread_create(&ordr, NULL, bridge_receiver, &ii[0]);
-   pthread_create(&ordr, NULL, bridge_receiver, &ii[2]);
+   run_thread(&ii[2].st->th, (void *(*)(void*)) maintainer, &((func_t) {(void (*)(void *)) cleanup_states, ii[2].st}));
+   for (int i = 0; i < 3; i++)
+   {
+      run_thread(&ii[i].th_bridge, bridge_receiver, &ii[i]);
+      run_thread(&ii[i].th_tbl, (void *(*)(void*)) maintainer, &((func_t) {(void (*)(void *)) if_maintainer, &ii[i]}));
+   }
 
    cli(ii, 3);
 
