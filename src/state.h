@@ -33,6 +33,8 @@
 #include <netinet/in.h>
 #endif
 
+#include "endoor.h"
+
 #define MAX_STATE_AGE 180
 
 typedef struct state
@@ -67,7 +69,7 @@ typedef struct state_table
    //! arrray of states
    state_t *state;
    //! maintainer thread
-   pthread_t th;
+   thelper_t th;
    //! table mutex
    pthread_mutex_t mutex;
 } state_table_t;
@@ -79,7 +81,7 @@ int new_state_table(state_table_t *, int );
 int update_state(state_table_t *, struct ether_header *, int , int);
 int update_state_if_exists(state_table_t *, struct ether_header *, int , int);
 int has_state(state_table_t *, struct ether_header *, int , int);
-void cleanup_states(state_table_t *);
+void *cleanup_states(state_table_t *);
 int snprint_states(state_table_t *, char *, int );
 
 

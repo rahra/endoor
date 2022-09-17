@@ -211,101 +211,86 @@ int update_table(proto_addr_t *pa, const char *hwaddr, int family, const char *a
 }
 
 
-#define MIN_HITS 100
-int search_router(proto_addr_t *pa, char *addr)
+int test_proto_addr(proto_addr_t *src, proto_addr_t *dst)
 {
-   int i, j, im, ir;
-   unsigned int max = 0, rmax = 0;
-
-   pthread_mutex_lock(&pa->mutex);
-   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
+   if ((src->flags & dst->flags) == dst->flags && src->hits > dst->hits)
    {
-      // ignore empty entries
-      if (!pa->list[i].family)
-         continue;
-      j++;
-
-      if (pa->list[i].flags & PA_ROUTER)
-      {
-         if (pa->list[i].hits > rmax)
-         {
-            rmax = pa->list[i].hits;
-            ir = i;
-         }
-      }
-      else
-      {
-         if (pa->list[i].hits > max)
-         {
-            max = pa->list[i].hits;
-            im = i;
-         }
-      }
+      memcpy(dst->addr, src->addr, addr_size(src->family));
+      dst->hits = src->hits;
+      return 0;
    }
-
-   i = 0;
-   if (rmax)
-   {
-      if (rmax > MIN_HITS)
-      {
-         HWADDR_COPY(addr, pa->list[ir].addr);
-         i = 1;
-      }
-   }
-   else if (max)
-   {
-      if (max > MIN_HITS)
-      {
-         HWADDR_COPY(addr, pa->list[im].addr);
-         i = 1;
-      }
-   }
-
-   pthread_mutex_unlock(&pa->mutex);
-
-   return i;
+   return -1;
 }
 
 
-int search_client0(proto_addr_t *pa, char *addr)
+int pa_iterate(proto_addr_t *pa, int (*query)(proto_addr_t *, void*), void *p)
 {
-   int i, j;
+   int i, j, res, i0 = pa->size;
 
    for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
    {
       // ignore empty entries
       if (!pa->list[i].family)
          continue;
-      j++;
 
-      if (pa->list[i].flags & PA_CLIENT)
-      {
-         memcpy(addr, pa->list[i].addr, addr_size(pa->list[i].family));
-         return i;
-      }
+      j++;
+      if ((res = query(&pa->list[i], p)) > 0)
+         i0 = i, i = pa->size;
+
+      if (!res)
+         i0 = i;
    }
-   return pa->size;
+   return i0;
+}
+
+
+#define MIN_HITS 100
+int search_router(proto_addr_t *pa, char *addr)
+{
+   proto_addr_t dst;
+   int res;
+
+   memset(&dst, 0, sizeof(dst));
+   dst.family = AF_PACKET;
+   dst.flags = PA_ROUTER;
+
+   pthread_mutex_lock(&pa->mutex);
+   if ((res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) >= pa->size)
+   {
+      dst.flags = 0;
+      res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst);
+   }
+   pthread_mutex_unlock(&pa->mutex);
+
+   if (res >= pa->size || dst.hits < MIN_HITS)
+      return pa->size;
+
+   HWADDR_COPY(addr, dst.addr);
+   return res;
 }
 
 
 int search_client(proto_addr_t *pa, char *hwaddr, char *addr)
 {
-   int i, j;
+   proto_addr_t dst;
+   int res;
+
+   memset(&dst, 0, sizeof(dst));
+   dst.family = AF_PACKET;
+   dst.flags = PA_CLIENT;
 
    pthread_mutex_lock(&pa->mutex);
-   if ((i = search_client0(pa, hwaddr)) >= pa->size)
-      goto sc_exit;
-
-   j = i;
-   if ((i = search_client0(&pa->list[i], addr)) >= pa->size)
-      goto sc_exit;
-
-   if (pa->list[j].list[i].family != AF_INET)
-      i = pa->size;
-
-sc_exit:
+   if ((res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) < pa->size)
+   {
+      HWADDR_COPY(hwaddr, dst.addr);
+      dst.family = AF_INET;
+      dst.hits = 0;
+      if ((res = pa_iterate(&pa->list[res], (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) < pa->size)
+         memcpy(addr, dst.addr, addr_size(dst.family));
+   }
    pthread_mutex_unlock(&pa->mutex);
-   return i;
+
+   return res;
 }
 
 

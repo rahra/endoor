@@ -133,14 +133,15 @@ int init_socket(if_info_t *ii)
 }
 
 
-void if_maintainer(if_info_t *ii)
+void *if_maintainer(if_info_t *ii)
 {
    char hwaddr[ETHER_ADDR_LEN], addr[16], netmask[4];
    int v;
 
    pa_cleanup(&ii->mtbl);
-   if (search_router(&ii->mtbl, hwaddr))
+   if (search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
    {
+      log_msg(LOG_DEBUG, "router found");
       pthread_mutex_lock(&ii->mutex);
       if (HWADDR_CMP(ii->hwrouter, hwaddr))
       {
@@ -173,17 +174,11 @@ void if_maintainer(if_info_t *ii)
       else if (v)
          log_msg(LOG_EMERG, "hwclient was set by other thread");
    }
+   return NULL;
 }
  
 
-typedef struct func
-{
-   void (*func)(void*);
-   void *p;
-} func_t;
-
-
-void *maintainer(func_t *fs)
+void *maintainer(thelper_t *fs)
 {
    pthread_detach(pthread_self());
    for (;;)
@@ -365,23 +360,29 @@ int main(int argc, char **argv)
    }
 
    new_state_table(&st, STATETABLESIZE);
+   st.th.func = (void *(*)(void*)) cleanup_states;
+   st.th.p = &st;
 
    pthread_mutex_init(&ii[1].mutex, NULL);
    init_socket(&ii[1]);
    ii[1].out = &ii[0];
    ii[1].gate = &ii[2];
    init_mac_table(&ii[1].mtbl, MACTABLESIZE, MACTABLESIZE);
-   //ii[1].wfd = create_file(pcapname, SNAPLEN);
+   ii[1].wfd = create_file(pcapname, SNAPLEN);
    ii[1].filter = filter_in_outside;
    ii[1].st = &st;
+   ii[1].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   ii[1].th_tbl.p = &ii[1];
 
    pthread_mutex_init(&ii[0].mutex, NULL);
    init_socket(&ii[0]);
    ii[0].out = &ii[1];
    init_mac_table(&ii[0].mtbl, MACTABLESIZE, MACTABLESIZE);
-   //ii[0].wfd = ii[1].wfd;
-   ii[0].wfd = create_file(pcapname, SNAPLEN);
+   ii[0].wfd = ii[1].wfd;
    ii[0].filter = filter_in_inside;
+   ii[0].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   ii[0].th_tbl.p = &ii[0];
+
 
    pthread_mutex_init(&ii[2].mutex, NULL);
    ii[2].fd = tun_alloc(ii[2].ifname, sizeof(ii[2].ifname));
@@ -390,6 +391,8 @@ int main(int argc, char **argv)
    ii[2].wfd = 0;
    ii[2].off = 10;
    ii[2].filter = filter_out_tunnel;
+   ii[2].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   ii[2].th_tbl.p = &ii[2];
    ii[2].st = &st;
    // set invalid address to tunnel if struct to circument detection of own address which is (0:0:0:0:0:0)
    memset(ii[2].hwaddr, -1, ETHER_ADDR_LEN);
@@ -398,11 +401,12 @@ int main(int argc, char **argv)
 
    //pthread_create(&ordr, NULL, maintainer, ii);
 
-   run_thread(&ii[2].st->th, (void *(*)(void*)) maintainer, &((func_t) {(void (*)(void *)) cleanup_states, ii[2].st}));
+   run_thread(&ii[2].st->th.th, (void *(*)(void*)) maintainer, &st.th);
+
    for (int i = 0; i < 3; i++)
    {
       run_thread(&ii[i].th_bridge, bridge_receiver, &ii[i]);
-      run_thread(&ii[i].th_tbl, (void *(*)(void*)) maintainer, &((func_t) {(void (*)(void *)) if_maintainer, &ii[i]}));
+      run_thread(&ii[i].th_tbl.th, (void *(*)(void*)) maintainer, &ii[i].th_tbl);
    }
 
    cli(ii, 3);

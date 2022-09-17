@@ -514,7 +514,7 @@ int update_state(state_table_t *st, struct ether_header *eh, int len, int dir)
  * MAX_STATE_AGE (defined in state.h).
  * @param st Pointer to state table struct.
  */
-void cleanup_states(state_table_t *st)
+void *cleanup_states(state_table_t *st)
 {
    time_t t = time(NULL);
    int i, j;
@@ -536,6 +536,8 @@ void cleanup_states(state_table_t *st)
    }
 
    pthread_mutex_unlock(&st->mutex);
+
+   return NULL;
 }
 
 
