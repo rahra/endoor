@@ -1,6 +1,6 @@
 
 AC_PREREQ([2.69])
-AC_INIT([endoor],[[1.0]],[bf@abenteuerland.at])
+AC_INIT([endoor],[[2.0]],[bf@abenteuerland.at])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_SUBST([CFLAGS], [["$CFLAGS -Wall -Wextra"]])
 AC_CONFIG_HEADERS([config.h])
