@@ -113,13 +113,11 @@ void print_mac_table(if_info_t *ii)
 void print_if_info(if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
-   int valid;
 
    ether_ntoa_r((struct ether_addr*) ii->hwaddr, hwaddr);
    pthread_mutex_lock(&ii->mutex);
    ether_ntoa_r((struct ether_addr*) ii->hwclient, hwclient);
    ether_ntoa_r((struct ether_addr*) ii->hwrouter, hwrouter);
-   valid = ii->hwclient_valid;
    pthread_mutex_unlock(&ii->mutex);
 
    printf(
@@ -132,10 +130,9 @@ void print_if_info(if_info_t *ii)
          "off = %d\n"
          "hwaddr = %s\n"
          "hwclient = %s\n"
-         "hwclient_valid = %d\n"
          "hwrouter = %s\n\n"
          ,
-         ii->ifname, ii->fd, ii->wfd, ii->filter, ii->out->ifname, ii->gate != NULL ? ii->gate->ifname : "NULL", ii->off, hwaddr, hwclient, valid, hwrouter);
+         ii->ifname, ii->fd, ii->wfd, ii->filter, ii->out->ifname, ii->gate != NULL ? ii->gate->ifname : "NULL", ii->off, hwaddr, hwclient, hwrouter);
 }
 
 

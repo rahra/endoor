@@ -285,7 +285,7 @@ int main(int argc, char **argv)
    ii[2].fd = tun_alloc(ii[2].ifname, sizeof(ii[2].ifname));
    ii[2].out = &ii[1];
    init_mac_table(&ii[2].mtbl, MACTABLESIZE, MACTABLESIZE);
-   ii[2].wfd = 0;
+   ii[2].wfd = -1;
    ii[2].off = 10;
    ii[2].filter = filter_out_tunnel;
    ii[2].th_tbl.func = (void *(*)(void*)) if_maintainer;
