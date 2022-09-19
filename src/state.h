@@ -82,7 +82,6 @@ int update_state(state_table_t *, struct ether_header *, int , int);
 int update_state_if_exists(state_table_t *, struct ether_header *, int , int);
 int has_state(state_table_t *, struct ether_header *, int , int);
 void *cleanup_states(state_table_t *);
-int snprint_states(state_table_t *, char *, int );
 
 
 #endif

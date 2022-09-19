@@ -15,37 +15,46 @@
  * along with Endoor. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*! \file log.h
+/*! \file estring.c
+ * This file contains various string functions for the output of information to
+ * the CLI.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2022/09/19
  */
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef ESTRING_H
+#define ESTRING_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef HAVE_SYSLOG_H
-#include <syslog.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+#ifdef HAVE_NETINET_ETHER_H
+#include <netinet/ether.h>
 #endif
 
-#define LOG_FCONN 0x400
-#define LOG_FERR 0x800
-
-extern int debug_level_;
-
-int open_connect_log(const char*);
-void log_msg(int, const char *, ...) __attribute__((format (printf, 2, 3)));
+#include "protoaddr.h"
+#include "log.h"
+#include "state.h"
 
 
-#ifdef DEBUG
-#define log_debug(fmt, x...) log_msg(LOG_DEBUG, "%s() " fmt, __func__, ## x)
-#else
-#define log_debug(fmt, x...)
-#endif
+int addr_ntop(int , const char *, char *, int );
+int snprint_proto_addr(char *, int , const proto_addr_t *);
+int snprint_palist(char *, int , const proto_addr_t *, int );
+int snprint_mac_table(char *, int , proto_addr_t *);
+int snprint_states(state_table_t *, char *, int );
 
 #endif
 

@@ -44,6 +44,7 @@
 
 #include "protoaddr.h"
 #include "log.h"
+#include "estring.h"
 
 
 /*! Init an allocate memory for a protocol address list of n available protocol
@@ -340,119 +341,4 @@ void pa_cleanup(proto_addr_t *pa)
    pa_cleanup0(pa);
    pthread_mutex_unlock(&pa->mutex);
 }
-
-
-/*! Convert a network address of type family to a character string. This
- * function is similar to inet_ntop(3) but can also convert ethernet addresses
- * (AF_PACKET).
- * @param family Adress family (AF_INET, AF_INET6, AD_PACKET).
- * @param src Pointer to network address.
- * @param dst Pointer to destination buffer.
- * @param len Length of destination buffer.
- * @return The function returns the length of the converted string. In case of
- * error, -1 is returned.
- */
-int addr_ntop(int family, const char *src, char *dst, int len)
-{
-   if (src == NULL || dst == NULL || len <= 0)
-      return -1;
-
-   switch (family)
-   {
-      case AF_INET:
-      case AF_INET6:
-         if (inet_ntop(family, src, dst, len) == NULL)
-         {
-            log_msg(LOG_ERR, "inet_ntop(): %s", strerror(errno));
-            *dst = '\0';
-         }
-         break;
-
-      case AF_PACKET:
-         if (len >= 19)
-         {
-            ether_ntoa_r((struct ether_addr*) src, dst);
-         }
-         else
-         {
-            log_msg(LOG_ERR, "buffer too small for ether_ntoa_r()");
-            *dst = '\0';
-         }
-         break;
-
-      default:
-         *dst = '\0';
-   }
-
-   return strlen(dst);
-}
-
-
-int snprint_proto_addr(char *buf, int len, const proto_addr_t *pa)
-{
-   char addr[64];
-
-   addr_ntop(pa->family, pa->addr, addr, sizeof(addr));
-   return snprintf(buf, len, "family = %d, addr = \"%s\", age = %ld, hits = %d, flags = %d, count = %d\n", pa->family, addr, time(NULL) - pa->age, pa->hits, pa->flags, pa->cnt);
-}
-
-
-static int bs(char *buf, int len, int n)
-{
-   int i;
-
-   len--;
-   for (i = 0; i < n && len > 0; i++, buf++, len--)
-      *buf = ' ';
-   *buf = '\0';
-
-   return n;
-}
-
-
-int snprint_palist(char *buf, int len, const proto_addr_t *pa, int indent)
-{
-   int i, j, wlen, tlen = 0;
-
-   if (len > 0)
-      *buf = '\0';
-
-   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
-   {
-      if (!pa->list[i].family)
-         continue;
-
-      wlen = bs(buf, len, indent);
-      buf += wlen;
-      len -= wlen;
-      tlen += wlen;
-
-      wlen = snprint_proto_addr(buf, len, &pa->list[i]);
-      buf += wlen;
-      len -= wlen;
-      tlen += wlen;
-
-      if (pa->list[i].cnt)
-      {
-         wlen = snprint_palist(buf, len, &pa->list[i], indent + 3);
-         buf += wlen;
-         len -= wlen;
-         tlen += wlen;
-      }
-   }
-
-   return tlen;
-}
-
-
-int snprint_mac_table(char *buf, int len, proto_addr_t *pa)
-{
-   int i;
-
-   pthread_mutex_lock(&pa->mutex);
-   i = snprint_palist(buf, len, pa, 0);
-   pthread_mutex_unlock(&pa->mutex);
-   return i;
-}
-
 

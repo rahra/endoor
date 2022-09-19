@@ -68,8 +68,6 @@ int update_table(proto_addr_t *, const char *, int , const char *, int );
 void pa_cleanup(proto_addr_t *);
 int search_router(proto_addr_t *, char *);
 int search_client(proto_addr_t *, char *, char *);
-int snprint_mac_table(char *, int , proto_addr_t *);
-int addr_ntop(int , const char *, char *, int );
 
 #endif
 
