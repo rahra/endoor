@@ -293,6 +293,8 @@ void *bridge_receiver(void *p)
    if (ii->off > (int) sizeof(buf))
       ii->off = sizeof(buf);
 
+   inc_thread_cnt();
+
    for (;;)
    {
       memset(buf, 0, ii->off);

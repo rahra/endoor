@@ -96,5 +96,7 @@ typedef struct thelper
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
 
+void inc_thread_cnt(void);
+
 #endif
 

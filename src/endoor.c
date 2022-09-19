@@ -72,6 +72,10 @@
 
 void cli(if_info_t *ii, int n);
 
+static int th_cnt_ = 0;
+static pthread_mutex_t th_mtx_ = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t th_cnd_ = PTHREAD_COND_INITIALIZER;
+
 
 int init_socket(if_info_t *ii)
 {
@@ -159,11 +163,30 @@ void *if_maintainer(if_info_t *ii)
 void *maintainer(thelper_t *fs)
 {
    pthread_detach(pthread_self());
+   inc_thread_cnt();
    for (;;)
    {
       sleep(10);
       fs->func(fs->p);
    }
+}
+
+
+void wait_thread_cnt(int n)
+{
+   pthread_mutex_lock(&th_mtx_);
+   while (n < th_cnt_)
+      pthread_cond_wait(&th_cnd_, &th_mtx_);
+   pthread_mutex_unlock(&th_mtx_);
+}
+
+
+void inc_thread_cnt(void)
+{
+   pthread_mutex_lock(&th_mtx_);
+   th_cnt_++;
+   pthread_cond_broadcast(&th_cnd_);
+   pthread_mutex_unlock(&th_mtx_);
 }
 
 
@@ -283,6 +306,9 @@ int main(int argc, char **argv)
       run_thread(&ii[i].th_tbl.th, (void *(*)(void*)) maintainer, &ii[i].th_tbl);
    }
 
+   // wait for all threads to be ready
+   wait_thread_cnt(7);
+   //run cli
    cli(ii, 3);
 
    if (ii[0].wfd > 0)
