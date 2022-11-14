@@ -122,7 +122,7 @@ int snprint_palist(char *buf, int len, const proto_addr_t *pa, int indent)
    if (len > 0)
       *buf = '\0';
 
-   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
+   for (i = 0, j = 0; i < pa->size && j < pa->cnt && len > 0; i++)
    {
       if (!pa->list[i].family)
          continue;
@@ -132,7 +132,8 @@ int snprint_palist(char *buf, int len, const proto_addr_t *pa, int indent)
       len -= wlen;
       tlen += wlen;
 
-      wlen = snprint_proto_addr(buf, len, &pa->list[i]);
+      if ((wlen = snprint_proto_addr(buf, len, &pa->list[i])) >= len)
+         wlen = len;
       buf += wlen;
       len -= wlen;
       tlen += wlen;
@@ -211,7 +212,8 @@ int snprint_states(state_table_t *st, char *buf, int len)
       addr_ntop(st->state[i].family, saddr, saddrs, sizeof(saddrs));
       addr_ntop(st->state[i].family, daddr, daddrs, sizeof(daddrs));
 
-      wlen = snprintf(buf, len, "%d: %d %s %d %s %d %ld\n", i, st->state[i].proto, saddrs, sport, daddrs, dport, time(NULL) - st->state[i].age);
+      if ((wlen = snprintf(buf, len, "%d: %d %s %d %s %d %ld\n", i, st->state[i].proto, saddrs, sport, daddrs, dport, time(NULL) - st->state[i].age)) >= len)
+         wlen = len;
       len -= wlen;
       buf += wlen;
       tlen += wlen;

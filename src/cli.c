@@ -101,15 +101,6 @@ void log_hex(const char *buf, int len)
 }
 
 
-void print_mac_table(if_info_t *ii)
-{
-   char buf[4096];
-
-   snprint_mac_table(buf, sizeof(buf), &ii->mtbl);
-   printf("===== %s =====\n%s\n", ii->ifname, buf);
-}
-
-
 void print_if_info(if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
@@ -153,7 +144,7 @@ void cli(if_info_t *ii, int n)
 {
    int running, i;
    char *s, *eptr;
-   char buf[65536];
+   char buf[256 * 1024];
 
    printf("Welcome to %s!\n", PACKAGE_STRING);
    for (running = 1; running;)
@@ -176,7 +167,10 @@ void cli(if_info_t *ii, int n)
       else if (!strcmp(s, "addr"))
       {
          for (i = 0; i < n; i++)
-            print_mac_table(&ii[i]);
+         {
+            snprint_mac_table(buf, sizeof(buf), &ii[i].mtbl);
+            printf("===== %s =====\n%s\n", ii->ifname, buf);
+         }
       }
       else if (!strcmp(s, "info"))
       {
