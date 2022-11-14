@@ -101,6 +101,19 @@ void log_hex(const char *buf, int len)
 }
 
 
+int set_hwrouter(if_info_t *ii, const char *s)
+{
+   int ret = -1;
+
+   pthread_mutex_lock(&ii->mutex);
+   if (ether_aton_r(s, (struct ether_addr*) ii->hwrouter) != NULL)
+      ii->router_valid = 2, ret = 0;
+   pthread_mutex_unlock(&ii->mutex);
+
+   return ret;
+}
+
+
 void print_if_info(if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
@@ -135,6 +148,7 @@ void cli_help(void)
          "exit ......... Exit program.\n"
          "info ......... Show interface info.\n"
          "nodebug ...... Set debug level to INFO (6).\n"
+         "router <hw> .. Set router hardware address.\n"
          "state ........ Show state table.\n"
          );
 }
@@ -176,6 +190,16 @@ void cli(if_info_t *ii, int n)
       {
          for (i = 0; i < n; i++)
             print_if_info(&ii[i]);
+      }
+      else if (!strcmp(s, "router"))
+      {
+         if ((s = strtok_r(NULL, " \r\n", &eptr)) != NULL)
+         {
+            if (set_hwrouter(&ii[1], s) == -1)
+               printf("ill hwaddr: \"%s\"\n", s);
+         }
+         else
+            printf("need hw address\n");
       }
       else if (!strcmp(s, "state"))
       {

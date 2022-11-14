@@ -71,6 +71,8 @@
 #define STATETABLESIZE 16384
 
 void cli(if_info_t *ii, int n);
+int set_hwrouter(if_info_t *, const char *);
+
 
 static int th_cnt_ = 0;
 static pthread_mutex_t th_mtx_ = PTHREAD_MUTEX_INITIALIZER;
@@ -121,7 +123,7 @@ void *if_maintainer(if_info_t *ii)
    int v;
 
    pa_cleanup(&ii->mtbl);
-   if (search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
+   if (ii->router_valid < 2 && search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
    {
       log_msg(LOG_DEBUG, "router found");
       pthread_mutex_lock(&ii->mutex);
@@ -209,6 +211,7 @@ void usage(const char *cmd)
          "  -d ................ Output debug info.\n"
          "  -i <inif> ......... Name of inside interface.\n"
          "  -o <outif> ........ Name of outside interface.\n"
+         "  -r <hwaddr> ....... Set hardware address of router to <hwaddr>.\n"
          "  -w <pcap> ......... Write packets to file.\n",
          cmd
          );
@@ -220,13 +223,14 @@ int main(int argc, char **argv)
    int c;
    if_info_t ii[3];
    char *pcapname = NULL;
+   char *hwrouter = NULL;
    state_table_t st;
 
    memset(ii, 0, sizeof(ii));
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
    strlcpy(ii[0].ifname, "eth1", sizeof(ii[0].ifname));
 
-   while ((c = getopt(argc, argv, "dhi:o:vw:")) != -1)
+   while ((c = getopt(argc, argv, "dhi:o:r:vw:")) != -1)
    {
       switch (c)
       {
@@ -240,6 +244,10 @@ int main(int argc, char **argv)
 
          case 'i':
             strlcpy(ii[0].ifname, optarg, sizeof(ii[0].ifname));
+            break;
+
+         case 'r':
+            hwrouter = optarg;
             break;
 
          case 'o':
@@ -270,6 +278,8 @@ int main(int argc, char **argv)
    ii[1].st = &st;
    ii[1].th_tbl.func = (void *(*)(void*)) if_maintainer;
    ii[1].th_tbl.p = &ii[1];
+   if (hwrouter != NULL && set_hwrouter(&ii[1], hwrouter) == -1)
+      printf("ill hwaddr: \"%s\"\n", hwrouter), exit(1);
 
    pthread_mutex_init(&ii[0].mutex, NULL);
    init_socket(&ii[0]);
