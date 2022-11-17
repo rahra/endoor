@@ -190,7 +190,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    {
       case ETHERTYPE_ARP:
          if (len < (int) sizeof(*eh) + (int) sizeof(*ah))
-            return FI_ACCEPT;
+            break;
 
          //log_msg(LOG_DEBUG, "%s: src = %s, ethertype = 0x%04x", ii->ifname, addrstr, ntohs(eh->ether_type));
          ah = (struct ether_arp*) (eh + 1);
@@ -203,13 +203,16 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
 
       case ETHERTYPE_IPV6:
          if (len < (int) sizeof(*eh) + (int) sizeof(*i6h))
-            return FI_ACCEPT;
+            break;
 
          i6h = (struct ip6_hdr*) (eh + 1);
          if (i6h->ip6_nxt == IPPROTO_ICMPV6)
          {
             if (len < (int) sizeof(*eh) + (int) sizeof(*i6h) + (int) sizeof(*icmp6))
-               return FI_ACCEPT;
+               break;
+
+            if (IN6_IS_ADDR_UNSPECIFIED(&i6h->ip6_src))
+               break;
 
             icmp6 = (struct icmp6_hdr*) (i6h + 1);
             switch (icmp6->icmp6_type)
