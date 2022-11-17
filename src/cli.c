@@ -183,7 +183,7 @@ void cli(if_info_t *ii, int n)
          for (i = 0; i < n; i++)
          {
             snprint_mac_table(buf, sizeof(buf), &ii[i].mtbl);
-            printf("===== %s =====\n%s\n", ii->ifname, buf);
+            printf("===== %s =====\n%s\n", ii[i].ifname, buf);
          }
       }
       else if (!strcmp(s, "info"))
