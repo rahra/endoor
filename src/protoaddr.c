@@ -214,7 +214,7 @@ int update_table(proto_addr_t *pa, const char *hwaddr, int family, const char *a
 
 int test_proto_addr(proto_addr_t *src, proto_addr_t *dst)
 {
-   if ((src->flags & dst->flags) == dst->flags && src->hits > dst->hits)
+   if ((src->flags & dst->flags) == dst->flags && src->family == dst->family && src->hits > dst->hits)
    {
       memcpy(dst->addr, src->addr, addr_size(src->family));
       dst->hits = src->hits;
@@ -224,6 +224,12 @@ int test_proto_addr(proto_addr_t *src, proto_addr_t *dst)
 }
 
 
+/*! This function iterates over all entries in a protocol address list pa and
+ * calls query() for each element.
+ * @return The function returns the index to an element if an entry was found
+ * by query. This index is 0 <= index < pa->size. If no entry was found
+ * pa->size is returned.
+ */
 int pa_iterate(proto_addr_t *pa, int (*query)(proto_addr_t *, void*), void *p)
 {
    int i, j, res, i0 = pa->size;
@@ -235,11 +241,8 @@ int pa_iterate(proto_addr_t *pa, int (*query)(proto_addr_t *, void*), void *p)
          continue;
 
       j++;
-      if ((res = query(&pa->list[i], p)) > 0)
+      if ((res = query(&pa->list[i], p)) >= 0)
          i0 = i, i = pa->size;
-
-      if (!res)
-         i0 = i;
    }
    return i0;
 }
@@ -278,7 +281,7 @@ int search_client(proto_addr_t *pa, char *hwaddr, char *addr)
 
    memset(&dst, 0, sizeof(dst));
    dst.family = AF_PACKET;
-   dst.flags = PA_CLIENT;
+   //dst.flags = PA_CLIENT;
 
    pthread_mutex_lock(&pa->mutex);
    if ((res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) < pa->size)

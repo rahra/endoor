@@ -117,10 +117,9 @@ int init_socket(if_info_t *ii)
 }
 
 
-void *if_maintainer(if_info_t *ii)
+void *outside_if_maintainer(if_info_t *ii)
 {
-   char hwaddr[ETHER_ADDR_LEN], addr[16], netmask[4];
-   int v;
+   char hwaddr[ETHER_ADDR_LEN];
 
    pa_cleanup(&ii->mtbl);
    if (ii->router_valid < 2 && search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
@@ -135,6 +134,14 @@ void *if_maintainer(if_info_t *ii)
       }
       pthread_mutex_unlock(&ii->mutex);
    }
+   return NULL;
+}
+
+
+void *inside_if_maintainer(if_info_t *ii)
+{
+   char hwaddr[ETHER_ADDR_LEN], addr[16], netmask[4];
+   int v;
 
    pthread_mutex_lock(&ii->mutex);
    v = ii->hwclient_valid;
@@ -166,6 +173,8 @@ void *maintainer(thelper_t *fs)
 {
    pthread_detach(pthread_self());
    inc_thread_cnt();
+   if (fs->func == NULL)
+      return NULL;
    for (;;)
    {
       sleep(10);
@@ -276,7 +285,7 @@ int main(int argc, char **argv)
    ii[1].wfd = create_file(pcapname, SNAPLEN);
    ii[1].filter = filter_in_outside;
    ii[1].st = &st;
-   ii[1].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   ii[1].th_tbl.func = (void *(*)(void*)) outside_if_maintainer;
    ii[1].th_tbl.p = &ii[1];
    if (hwrouter != NULL && set_hwrouter(&ii[1], hwrouter) == -1)
       printf("ill hwaddr: \"%s\"\n", hwrouter), exit(1);
@@ -286,10 +295,9 @@ int main(int argc, char **argv)
    ii[0].out = &ii[1];
    init_mac_table(&ii[0].mtbl, MACTABLESIZE, MACTABLESIZE);
    ii[0].wfd = ii[1].wfd;
-   ii[0].filter = filter_in_inside;
-   ii[0].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   ii[0].filter = filter_accept /* filter_in_inside */;
+   ii[0].th_tbl.func = (void *(*)(void*)) inside_if_maintainer;
    ii[0].th_tbl.p = &ii[0];
-
 
    pthread_mutex_init(&ii[2].mutex, NULL);
    ii[2].fd = tun_alloc(ii[2].ifname, sizeof(ii[2].ifname));
@@ -298,8 +306,8 @@ int main(int argc, char **argv)
    ii[2].wfd = -1;
    ii[2].off = 10;
    ii[2].filter = filter_out_tunnel;
-   ii[2].th_tbl.func = (void *(*)(void*)) if_maintainer;
-   ii[2].th_tbl.p = &ii[2];
+   //ii[2].th_tbl.func = (void *(*)(void*)) if_maintainer;
+   //ii[2].th_tbl.p = &ii[2];
    ii[2].st = &st;
    // set invalid address to tunnel if struct to circument detection of own address which is (0:0:0:0:0:0)
    memset(ii[2].hwaddr, -1, ETHER_ADDR_LEN);
