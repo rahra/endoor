@@ -33,6 +33,7 @@
 #ifdef HAVE_NETINET_IP6_H
 #include <netinet/ip6.h>
 #endif
+#include <netinet/udp.h>
 
 #include "bridge.h"
 #include "endoor.h"
@@ -148,6 +149,20 @@ int filter_out_tunnel(if_info_t *ii, char *buf, int len)
 }
 
 
+int handle_udp(const struct udphdr *uh, int len, char *dst, int size)
+{
+   len -= sizeof(*uh);
+   if (len < 0)
+      return -1;
+
+   if (uh->uh_sport == uh->uh_dport && uh->uh_dport == htons(138))
+   {
+   }
+
+   return 0;
+}
+
+
 /*! This is the basic frame processor.
  * It observes all incoming frames and updates the mac address table
  * accordingly.
@@ -164,7 +179,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
 {
    struct ether_header *eh = (struct ether_header*) buf;
    struct ether_arp *ah;
-   //struct iphdr *ih;
+   struct iphdr *ih;
    struct ip6_hdr *i6h;
    struct icmp6_hdr *icmp6;
    int family = AF_PACKET;
@@ -177,6 +192,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
       log_msg(LOG_WARNING, "frame of %d bytes too short on %s", len, ii->ifname);
       return FI_ACCEPT;
    }
+   len -= sizeof(*eh);
 
    addr = eh->ether_src;
    if (!HWADDR_CMP(ii->hwaddr, addr))
@@ -189,7 +205,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    switch (ntohs(eh->ether_type))
    {
       case ETHERTYPE_ARP:
-         if (len < (int) sizeof(*eh) + (int) sizeof(*ah))
+         if (len < (int) sizeof(*ah))
             break;
 
          //log_msg(LOG_DEBUG, "%s: src = %s, ethertype = 0x%04x", ii->ifname, addrstr, ntohs(eh->ether_type));
@@ -201,14 +217,26 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
          }
          break;
 
+      case ETHERTYPE_IP:
+         len -= sizeof(*ih);
+         if (len < 0)
+            break;
+         ih = (struct iphdr*) (eh + 1);
+         char *next = (char*) ih + ih->ihl * 4;
+         len -= ih->ihl * 4;
+
+         if (ih->protocol == IPPROTO_UDP)
+            handle_udp((struct udphdr*) next, len, NULL, 0);
+         break;
+
       case ETHERTYPE_IPV6:
-         if (len < (int) sizeof(*eh) + (int) sizeof(*i6h))
+         if (len < (int) sizeof(*i6h))
             break;
 
          i6h = (struct ip6_hdr*) (eh + 1);
          if (i6h->ip6_nxt == IPPROTO_ICMPV6)
          {
-            if (len < (int) sizeof(*eh) + (int) sizeof(*i6h) + (int) sizeof(*icmp6))
+            if (len < (int) sizeof(*i6h) + (int) sizeof(*icmp6))
                break;
 
             if (IN6_IS_ADDR_UNSPECIFIED(&i6h->ip6_src))

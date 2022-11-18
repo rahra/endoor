@@ -43,3 +43,9 @@ int decode_nbname(const char *src, int slen, char *dst, int dsize)
    return dlen;
 }
 
+
+int check_netbios(const nbds_t *nb, int len)
+{
+   return 0;
+}
+
