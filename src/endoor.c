@@ -71,7 +71,7 @@
 #define MACTABLESIZE 1024
 #define STATETABLESIZE 16384
 
-void cli(if_info_t *ii, int n);
+void cli(FILE *, FILE *, if_info_t *, int );
 int set_hwrouter(if_info_t *, const char *);
 
 
@@ -120,7 +120,7 @@ void *outside_if_maintainer(if_info_t *ii)
    pa_cleanup(&ii->mtbl);
    if (ii->router_valid < 2 && search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
    {
-      log_msg(LOG_DEBUG, "router found");
+      //log_msg(LOG_DEBUG, "router found");
       pthread_mutex_lock(&ii->mutex);
       if (HWADDR_CMP(ii->hwrouter, hwaddr))
       {
@@ -297,7 +297,7 @@ int main(int argc, char **argv)
    // wait for all threads to be ready
    wait_thread_cnt(6);
    //run cli
-   cli(ii, 3);
+   cli(stdin, stdout, ii, 3);
 
    if (ii[0].wfd > 0)
       close(ii[0].wfd);

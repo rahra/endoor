@@ -114,7 +114,7 @@ int set_hwrouter(if_info_t *ii, const char *s)
 }
 
 
-void print_if_info(if_info_t *ii)
+void print_if_info(FILE *f, if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
 
@@ -124,7 +124,7 @@ void print_if_info(if_info_t *ii)
    ether_ntoa_r((struct ether_addr*) ii->hwrouter, hwrouter);
    pthread_mutex_unlock(&ii->mutex);
 
-   printf(
+   fprintf(f, 
          "===== %s =====\n"
          "fd = %d\n"
          "wfd = %d\n"
@@ -140,9 +140,9 @@ void print_if_info(if_info_t *ii)
 }
 
 
-void cli_help(void)
+void cli_help(FILE *f)
 {
-   printf(
+   fprintf(f,
          "addr ......... List address tables.\n"
          "debug ........ Set debug level to DEBUG (7).\n"
          "exit ......... Exit program.\n"
@@ -154,17 +154,17 @@ void cli_help(void)
 }
 
 
-void cli(if_info_t *ii, int n)
+void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
 {
    int running, i;
    char *s, *eptr;
    char buf[256 * 1024];
 
-   printf("Welcome to %s!\n", PACKAGE_STRING);
+   fprintf(f, "Welcome to %s!\n", PACKAGE_STRING);
    for (running = 1; running;)
    {
-      printf("endoor# ");
-      if (fgets(buf, sizeof(buf), stdin) == NULL)
+      fprintf(f, "endoor# ");
+      if (fgets(buf, sizeof(buf), f0) == NULL)
          break;
 
       if ((s = strtok_r(buf, " \r\n", &eptr)) == NULL)
@@ -177,36 +177,36 @@ void cli(if_info_t *ii, int n)
       else if (!strcmp(s, "nodebug"))
          debug_level_ = 6;
       else if (!strcmp(s, "help"))
-         cli_help();
+         cli_help(f);
       else if (!strcmp(s, "addr"))
       {
          for (i = 0; i < n; i++)
          {
             snprint_mac_table(buf, sizeof(buf), &ii[i].mtbl);
-            printf("===== %s =====\n%s\n", ii[i].ifname, buf);
+            fprintf(f, "===== %s =====\n%s\n", ii[i].ifname, buf);
          }
       }
       else if (!strcmp(s, "info"))
       {
          for (i = 0; i < n; i++)
-            print_if_info(&ii[i]);
+            print_if_info(f, &ii[i]);
       }
       else if (!strcmp(s, "router"))
       {
          if ((s = strtok_r(NULL, " \r\n", &eptr)) != NULL)
          {
             if (set_hwrouter(&ii[1], s) == -1)
-               printf("ill hwaddr: \"%s\"\n", s);
+               fprintf(f, "ill hwaddr: \"%s\"\n", s);
          }
          else
-            printf("need hw address\n");
+            fprintf(f, "need hw address\n");
       }
       else if (!strcmp(s, "state"))
       {
          snprint_states(ii[2].st, buf, sizeof(buf));
-         printf("%s\n", buf);
+         fprintf(f, "%s\n", buf);
       }
    }
-   printf("Good bye!\n");
+   fprintf(f, "Good bye!\n");
 }
 
