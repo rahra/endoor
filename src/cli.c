@@ -65,6 +65,7 @@
 #include "bridge.h"
 #include "tun.h"
 #include "estring.h"
+#include "json.h"
 
 #define SNAPLEN 4096
 #define MACTABLESIZE 1024
@@ -111,6 +112,29 @@ int set_hwrouter(if_info_t *ii, const char *s)
    pthread_mutex_unlock(&ii->mutex);
 
    return ret;
+}
+
+
+void j_if_info(FILE *f, if_info_t *ii, int indent)
+{
+   char hwaddr[32], hwclient[32], hwrouter[32];
+
+   ether_ntoa_r((struct ether_addr*) ii->hwaddr, hwaddr);
+   pthread_mutex_lock(&ii->mutex);
+   ether_ntoa_r((struct ether_addr*) ii->hwclient, hwclient);
+   ether_ntoa_r((struct ether_addr*) ii->hwrouter, hwrouter);
+   pthread_mutex_unlock(&ii->mutex);
+
+   findent(f, indent);
+   fochar(f, '{');
+   fstring(f, "ifname", ii->ifname, indent + 1);
+   fstring(f, "gate", ii->gate != NULL ? ii->gate->ifname : "NULL", indent + 1);
+   fstring(f, "hwaddr", hwaddr, indent + 1);
+   fstring(f, "hwclient", hwclient, indent + 1);
+   fstring(f, "hwrouter", hwrouter, indent + 1);
+   funsep(f);
+   findent(f, indent);
+   fcchar(f, '}');
 }
 
 
@@ -205,6 +229,11 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
       {
          snprint_states(ii[2].st, buf, sizeof(buf));
          fprintf(f, "%s\n", buf);
+      }
+      else if (!strcmp(s, "dump"))
+      {
+         for (i = 0; i < n; i++)
+            j_if_info(f, &ii[i], 0);
       }
    }
    fprintf(f, "Good bye!\n");
