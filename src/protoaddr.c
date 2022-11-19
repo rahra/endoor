@@ -46,6 +46,24 @@
 #include "log.h"
 #include "estring.h"
 
+static int max_age_ = MAX_AGE;
+
+
+/*! Set the maximum age of the entries in the address table.
+ * @param age Maximum age in seconds. 0 means infinite age. Negative values are
+ * ignored.
+ * @return The function returns the age which was previously set. If age was
+ * set to a negative value it will return the current value without changing
+ * it.
+ */
+int set_max_age(int age)
+{
+   int m = max_age_;
+   if (age >= 0)
+      max_age_ = age;
+   return m;
+}
+
 
 /*! Init an allocate memory for a protocol address list of n available protocol
  * addresses.
@@ -324,7 +342,7 @@ void pa_cleanup0(proto_addr_t *pa)
          continue;
  
       // ignore young entries
-      if (pa->list[i].age + MAX_AGE > t)
+      if (!max_age_ || pa->list[i].age + max_age_ > t)
          continue;
 
       addr_ntop(pa->list[i].family, pa->list[i].addr, addr, sizeof(addr));
