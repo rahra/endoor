@@ -330,7 +330,7 @@ int tun_ifup(const char *dev)
    struct ifreq ifr;
    int sockfd;
 
-   log_msg(LOG_INFO, "bringing up interface");
+   log_msg(LOG_INFO, "bringing up interface %s", dev);
    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
    {
       log_msg(LOG_ERR, "failed to create temp socket: %s", strerror(errno));

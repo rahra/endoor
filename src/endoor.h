@@ -85,18 +85,10 @@
 //! copy an IPv6 address from b to a
 #define IN6_ADDR_COPY(a,b) memcpy(a, b, sizeof(struct in6_addr))
 
-typedef struct thelper
-{
-   pthread_t th;
-   void *(*func)(void*);
-   void *p;
-} thelper_t;
 
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
-
-void inc_thread_cnt(void);
 
 #endif
 

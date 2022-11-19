@@ -39,6 +39,7 @@
 #endif
 
 #include "log.h"
+#include "thread.h"
 
 #define TIMESTRLEN 64
 #define CBUFLEN 1024
@@ -74,6 +75,7 @@ void vlog_msgf(FILE *out, int lf, const char *fmt, va_list ap)
    char timestr[TIMESTRLEN] = "", timez[TIMESTRLEN] = "";
    int level = LOG_PRI(lf);
    char buf[1024];
+   char name[16];
 
    if (debug_level_ < level)
       return;
@@ -91,7 +93,7 @@ void vlog_msgf(FILE *out, int lf, const char *fmt, va_list ap)
    (void) pthread_mutex_lock(&log_mutex_);
    if (out)
    {
-      fprintf(out, "%s.%03d %s [%6s] ", timestr, (int) (tv.tv_usec / 1000), timez, flty_[level]);
+      fprintf(out, "%s.%03d %s [%s:%6s] ", timestr, (int) (tv.tv_usec / 1000), timez, thread_name(name, sizeof(name)), flty_[level]);
       vfprintf(out, fmt, ap);
       fprintf(out, "\n");
    }

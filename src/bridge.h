@@ -61,10 +61,8 @@ typedef struct if_info
    char hwaddr[ETHER_ADDR_LEN];
    //! state table
    state_table_t *st;
-   //! thread struct for bridge
-   pthread_t th_bridge;
-   //! thread hanalde for mac table maintainer
-   thelper_t th_tbl;
+   //! entry for interface maintainer thread
+   void *(*if_maintainer)(void*);
    //! mutex for hwclient
    pthread_mutex_t mutex;
    //! assumed client mac address

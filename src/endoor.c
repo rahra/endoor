@@ -65,6 +65,7 @@
 #include "log.h"
 #include "bridge.h"
 #include "tun.h"
+#include "thread.h"
 
 #define SNAPLEN 4096
 #define MACTABLESIZE 1024
@@ -72,11 +73,6 @@
 
 void cli(if_info_t *ii, int n);
 int set_hwrouter(if_info_t *, const char *);
-
-
-static int th_cnt_ = 0;
-static pthread_mutex_t th_mtx_ = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t th_cnd_ = PTHREAD_COND_INITIALIZER;
 
 
 int init_socket(if_info_t *ii)
@@ -169,46 +165,23 @@ void *inside_if_maintainer(if_info_t *ii)
 }
  
 
-void *maintainer(thelper_t *fs)
+/*! This is a wrapper function. */
+void *state_maintainer(if_info_t *ii)
 {
-   pthread_detach(pthread_self());
+   cleanup_states(ii->st);
+   return NULL;
+}
+
+
+void *maintainer(void *p)
+{
+   if_info_t *ii = p;
    inc_thread_cnt();
-   if (fs->func == NULL)
-      return NULL;
+
    for (;;)
    {
       sleep(10);
-      fs->func(fs->p);
-   }
-}
-
-
-void wait_thread_cnt(int n)
-{
-   pthread_mutex_lock(&th_mtx_);
-   while (n < th_cnt_)
-      pthread_cond_wait(&th_cnd_, &th_mtx_);
-   pthread_mutex_unlock(&th_mtx_);
-}
-
-
-void inc_thread_cnt(void)
-{
-   pthread_mutex_lock(&th_mtx_);
-   th_cnt_++;
-   pthread_cond_broadcast(&th_cnd_);
-   pthread_mutex_unlock(&th_mtx_);
-}
-
-
-void run_thread(pthread_t *th, void *(*start)(void*), void *p)
-{
-   int e;
-
-   if ((e = pthread_create(th, NULL, start, p)) != 0)
-   {
-      log_msg(LOG_ERR, "pthread_create() failed: %s", strerror(e));
-      exit(1);
+      (void) ii->if_maintainer(ii);
    }
 }
 
@@ -234,6 +207,7 @@ int main(int argc, char **argv)
    char *pcapname = NULL;
    char *hwrouter = NULL;
    state_table_t st;
+   char name[16];
 
    memset(ii, 0, sizeof(ii));
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
@@ -274,8 +248,6 @@ int main(int argc, char **argv)
    }
 
    new_state_table(&st, STATETABLESIZE);
-   st.th.func = (void *(*)(void*)) cleanup_states;
-   st.th.p = &st;
 
    pthread_mutex_init(&ii[1].mutex, NULL);
    init_socket(&ii[1]);
@@ -285,8 +257,7 @@ int main(int argc, char **argv)
    ii[1].wfd = create_file(pcapname, SNAPLEN);
    ii[1].filter = filter_in_outside;
    ii[1].st = &st;
-   ii[1].th_tbl.func = (void *(*)(void*)) outside_if_maintainer;
-   ii[1].th_tbl.p = &ii[1];
+   ii[1].if_maintainer = (void *(*)(void*)) outside_if_maintainer;
    if (hwrouter != NULL && set_hwrouter(&ii[1], hwrouter) == -1)
       printf("ill hwaddr: \"%s\"\n", hwrouter), exit(1);
 
@@ -296,8 +267,7 @@ int main(int argc, char **argv)
    init_mac_table(&ii[0].mtbl, MACTABLESIZE, MACTABLESIZE);
    ii[0].wfd = ii[1].wfd;
    ii[0].filter = filter_accept /* filter_in_inside */;
-   ii[0].th_tbl.func = (void *(*)(void*)) inside_if_maintainer;
-   ii[0].th_tbl.p = &ii[0];
+   ii[0].if_maintainer = (void *(*)(void*)) inside_if_maintainer;
 
    pthread_mutex_init(&ii[2].mutex, NULL);
    ii[2].fd = tun_alloc(ii[2].ifname, sizeof(ii[2].ifname));
@@ -306,26 +276,26 @@ int main(int argc, char **argv)
    ii[2].wfd = -1;
    ii[2].off = 10;
    ii[2].filter = filter_out_tunnel;
-   //ii[2].th_tbl.func = (void *(*)(void*)) if_maintainer;
-   //ii[2].th_tbl.p = &ii[2];
+   ii[2].if_maintainer = (void *(*)(void*)) state_maintainer;
    ii[2].st = &st;
    // set invalid address to tunnel if struct to circument detection of own address which is (0:0:0:0:0:0)
    memset(ii[2].hwaddr, -1, ETHER_ADDR_LEN);
 
    ii[1].wfd = ii[0].wfd;
 
-   //pthread_create(&ordr, NULL, maintainer, ii);
-
-   run_thread(&ii[2].st->th.th, (void *(*)(void*)) maintainer, &st.th);
-
    for (int i = 0; i < 3; i++)
    {
-      run_thread(&ii[i].th_bridge, bridge_receiver, &ii[i]);
-      run_thread(&ii[i].th_tbl.th, (void *(*)(void*)) maintainer, &ii[i].th_tbl);
+      snprintf(name, sizeof(name), "recv%d", i);
+      if (run_thread(name, bridge_receiver, &ii[i]))
+         log_msg(LOG_ERR, "run_thread() failed"), exit(1);
+
+      snprintf(name, sizeof(name), "mnt%d", i);
+      if (run_thread(name, maintainer, &ii[i]))
+         log_msg(LOG_ERR, "run_thread() failed"), exit(1);
    }
 
    // wait for all threads to be ready
-   wait_thread_cnt(7);
+   wait_thread_cnt(6);
    //run cli
    cli(ii, 3);
 

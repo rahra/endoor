@@ -41,6 +41,7 @@
 #include "log.h"
 #include "tun.h"
 #include "state.h"
+#include "thread.h"
 
 #define SNAPLEN 4096
 

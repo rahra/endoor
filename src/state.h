@@ -68,8 +68,6 @@ typedef struct state_table
    int num;
    //! arrray of states
    state_t *state;
-   //! maintainer thread
-   thelper_t th;
    //! table mutex
    pthread_mutex_t mutex;
 } state_table_t;
