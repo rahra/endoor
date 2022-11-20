@@ -66,6 +66,7 @@
 #include "tun.h"
 #include "estring.h"
 #include "json.h"
+#include "cli.h"
 
 #define SNAPLEN 4096
 #define MACTABLESIZE 1024
@@ -135,6 +136,7 @@ void j_if_info(FILE *f, if_info_t *ii, int indent)
    funsep(f);
    findent(f, indent);
    fcchar(f, '}');
+   //funsep(f);
 }
 
 
@@ -178,11 +180,40 @@ void cli_help(FILE *f)
 }
 
 
+/*! This function parses the arguments in string s delemited by one of " \r\n"
+ * into the array argv. The last entry in argv is set to NULL.
+ * @param s Source string to parse.
+ * @param argv Array to receive pointers to each element.
+ * @param size Number of elements available in argv.
+ * @return Returns the number of arguments (argc) parsed into argv not counting
+ * the last NULL element, which is 0 <= argc < size.
+ */
+int parse_cmd(char *s, char **argv, int size)
+{
+   const char *sep = " \r\n";
+   char *r;
+   int c = 0;
+
+   s = strtok_r(s, sep, &r);
+   for (; s != NULL && c < size - 1; c++, argv++)
+   {
+      *argv = s;
+      s = strtok_r(NULL, sep, &r);
+   }
+
+   if (c < size)
+      *argv = NULL;
+
+   return c;
+}
+
+
 void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
 {
    int running, i;
-   char *s, *eptr;
    char buf[256 * 1024];
+   char *argv[MAX_ARGS];
+   int argc;
 
    fprintf(f, "Welcome to %s!\n", PACKAGE_STRING);
    for (running = 1; running;)
@@ -191,18 +222,18 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
       if (fgets(buf, sizeof(buf), f0) == NULL)
          break;
 
-      if ((s = strtok_r(buf, " \r\n", &eptr)) == NULL)
+      if (!(argc = parse_cmd(buf, argv, MAX_ARGS)))
          continue;
 
-      if (!strcmp(s, "exit"))
+      if (!strcmp(argv[0], "exit"))
          running = 0;
-      else if (!strcmp(s, "debug"))
+      else if (!strcmp(argv[0], "debug"))
          debug_level_ = 7;
-      else if (!strcmp(s, "nodebug"))
+      else if (!strcmp(argv[0], "nodebug"))
          debug_level_ = 6;
-      else if (!strcmp(s, "help"))
+      else if (!strcmp(argv[0], "help"))
          cli_help(f);
-      else if (!strcmp(s, "addr"))
+      else if (!strcmp(argv[0], "addr"))
       {
          for (i = 0; i < n; i++)
          {
@@ -210,30 +241,38 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
             fprintf(f, "===== %s =====\n%s\n", ii[i].ifname, buf);
          }
       }
-      else if (!strcmp(s, "info"))
+      else if (!strcmp(argv[0], "info"))
       {
          for (i = 0; i < n; i++)
             print_if_info(f, &ii[i]);
       }
-      else if (!strcmp(s, "router"))
+      else if (!strcmp(argv[0], "router"))
       {
-         if ((s = strtok_r(NULL, " \r\n", &eptr)) != NULL)
+         if (argc > 1)
          {
-            if (set_hwrouter(&ii[1], s) == -1)
-               fprintf(f, "ill hwaddr: \"%s\"\n", s);
+            if (set_hwrouter(&ii[1], argv[1]) == -1)
+               fprintf(f, "ill hwaddr: \"%s\"\n", argv[1]);
          }
          else
             fprintf(f, "need hw address\n");
       }
-      else if (!strcmp(s, "state"))
+      else if (!strcmp(argv[0], "state"))
       {
          snprint_states(ii[2].st, buf, sizeof(buf));
          fprintf(f, "%s\n", buf);
       }
-      else if (!strcmp(s, "dump"))
+      else if (!strcmp(argv[0], "dump"))
       {
-         for (i = 0; i < n; i++)
-            j_if_info(f, &ii[i], 0);
+         FILE *fout;
+
+         if ((fout = fopen("dump.json", "w")) != NULL)
+         {
+            for (i = 0; i < n; i++)
+               j_if_info(fout, &ii[i], 0);
+            fclose(fout);
+         }
+         else
+            fprintf(f, "failed to open file\n");
       }
    }
    fprintf(f, "Good bye!\n");

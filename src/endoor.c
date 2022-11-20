@@ -66,12 +66,12 @@
 #include "bridge.h"
 #include "tun.h"
 #include "thread.h"
+#include "cli.h"
 
 #define SNAPLEN 4096
 #define MACTABLESIZE 1024
 #define STATETABLESIZE 16384
 
-void cli(FILE *, FILE *, if_info_t *, int );
 int set_hwrouter(if_info_t *, const char *);
 
 
