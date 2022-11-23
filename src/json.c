@@ -12,11 +12,12 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <errno.h>
 
 #include "log.h"
-#include "bstring.h"
 #include "json.h"
 
 
@@ -157,20 +158,6 @@ int fint(FILE *f, const char *k, long v, int indent)
    return fprintf(f, "\"%s\": %ld,%c", k, v, CCHAR) + in;
 }
 
-
-int fbstring(FILE *f, const char *k, const bstring_t *v, int indent)
-{
-   char buf[v->len * 2 + 2];
-   int len;
-
-   if ((len = jesc(v->buf, v->len, buf, sizeof(buf))) == -1)
-      return 0;
-
-   int in = findent(f, indent);
-   return fprintf(f, "\"%s\": \"%.*s\",%c", k, len, buf, CCHAR) + in;
-}
-
-
 int fstring(FILE *f, const char *k, const char *v, int indent)
 {
    char buf[strlen(v) * 2 + 2];
@@ -181,5 +168,133 @@ int fstring(FILE *f, const char *k, const char *v, int indent)
 
    int in = findent(f, indent);
    return fprintf(f, "\"%s\": \"%s\",%c", k, buf, CCHAR) + in;
+}
+
+
+int jrealloc(json_t *J)
+{
+   char *buf;
+
+   if ((buf = realloc(J->buf, J->size + JBUFBLK)) == NULL)
+   {
+      log_msg(LOG_ERR, "cannot increase json buffer: %s", strerror(errno));
+      return -1;
+   }
+   J->buf = buf;
+   J->size += JBUFBLK;
+   return 0;
+}
+
+
+int jgrow(json_t *J, int len)
+{
+   while (J->size - J->len < len)
+      if (jrealloc(J) == -1)
+         return 0;
+   return 1;
+}
+
+
+char jsep(json_t *J)
+{
+   return J->condensed ? ' ' : '\n';
+}
+
+
+int jindent(json_t *J, int n)
+{
+   if (J->condensed)
+      return 0;
+
+   int len = n * INDENT;
+
+   if (!jgrow(J, len))
+      return 0;
+
+   memset(J->buf + J->len, ' ', len);
+   J->len += len;
+   return len;
+}
+
+
+int junsep(json_t *J)
+{
+   if (J->len < 2)
+      return 0;
+
+   J->buf[J->len - 2] = J->buf[J->len - 1];
+   J->len--;
+   return -1;
+}
+
+
+int jochar(json_t *J, char c)
+{
+   if (!jgrow(J, 2))
+      return 0;
+
+   J->buf[J->len++] = c;
+   J->buf[J->len++] = jsep(J);
+   return 2;
+}
+
+
+int jcchar(json_t *J, char c)
+{
+   if (!jgrow(J, 3))
+      return 0;
+
+   J->buf[J->len++] = c;
+   J->buf[J->len++] = ',';
+   J->buf[J->len++] = jsep(J);
+   return 3;
+}
+
+
+int jlabel(json_t *J, const char *k, int indent)
+{
+   int len;
+   int in = jindent(J, indent);
+
+   for (len = J->size; len >= J->size - J->len;)
+   {
+      len = snprintf(J->buf + J->len, J->size - J->len, "\"%s\": ", k);
+      if (len >= J->size - J->len && !jgrow(J, len + 1))
+         return 0;
+   }
+   J->len += len;
+   return len + in;
+}
+
+
+int jint(json_t *J, const char *k, long v, int indent)
+{
+   int len;
+   int in = jlabel(J, k, indent);
+
+   for (len = J->size; len >= J->size - J->len;)
+   {
+      len = snprintf(J->buf + J->len, J->size - J->len, "%ld,%c", v, jsep(J));
+      if (len >= J->size - J->len && !jgrow(J, len + 1))
+         return 0;
+   }
+   J->len += len;
+   return len + in;
+}
+
+
+int jstring(json_t *J, const char *k, const char *v, int indent)
+{
+   char buf[strlen(v) * 2 + 2];
+   int len;
+   int in = jlabel(J, k, indent);
+
+   if ((len = jesc(v, strlen(v), buf, sizeof(buf))) == -1)
+      return 0;
+
+   if (!jgrow(J, len + 5))
+      return 0;
+
+   return snprintf(J->buf + J->len, J->size - J->len, "\"%s\",%c", buf, jsep(J)) + in;
 }
 
