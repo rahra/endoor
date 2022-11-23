@@ -80,6 +80,7 @@ int init_socket(if_info_t *ii)
    struct sockaddr_ll sa;
    struct ifreq ifr;
 
+   log_msg(LOG_INFO, "setting up %s", ii->ifname);
    if ((ii->fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) == -1)
       log_msg(LOG_ERR, "socket(): %s", strerror(errno)), exit(1);
 
@@ -214,7 +215,7 @@ int main(int argc, char **argv)
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
    strlcpy(ii[0].ifname, "eth1", sizeof(ii[0].ifname));
 
-   while ((c = getopt(argc, argv, "dhi:o:r:vw:")) != -1)
+   while ((c = getopt(argc, argv, "a:dhi:o:r:vw:")) != -1)
    {
       switch (c)
       {
@@ -268,7 +269,8 @@ int main(int argc, char **argv)
       printf("ill hwaddr: \"%s\"\n", hwrouter), exit(1);
 
    pthread_mutex_init(&ii[0].mutex, NULL);
-   init_socket(&ii[0]);
+   if (strcmp(ii[0].ifname, "null"))
+      init_socket(&ii[0]);
    ii[0].out = &ii[1];
    init_mac_table(&ii[0].mtbl, MACTABLESIZE, MACTABLESIZE);
    ii[0].wfd = ii[1].wfd;

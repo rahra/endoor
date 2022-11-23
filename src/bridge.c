@@ -280,6 +280,9 @@ int write_out(if_info_t *ii, const char *buf, int len)
 {
    int wlen;
 
+   if (ii->fd <= 0)
+      return len;
+
    if ((wlen = write(ii->fd, buf + ii->off, len - ii->off)) == -1)
    {
       log_msg(LOG_ERR, "write() to %s failed: %s (%d bytes)", ii->ifname, strerror(errno), len - ii->off);
@@ -326,6 +329,10 @@ void *bridge_receiver(void *p)
       ii->off = sizeof(buf);
 
    inc_thread_cnt();
+
+   // exit thread again if no input device
+   if (ii->fd <= 0)
+      return NULL;
 
    for (;;)
    {
