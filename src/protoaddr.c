@@ -47,6 +47,7 @@
 #include "estring.h"
 
 static int max_age_ = MAX_AGE;
+static pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 
 /*! Set the maximum age of the entries in the address table.
@@ -58,9 +59,11 @@ static int max_age_ = MAX_AGE;
  */
 int set_max_age(int age)
 {
+   pthread_mutex_lock(&mutex_);
    int m = max_age_;
    if (age >= 0)
       max_age_ = age;
+   pthread_mutex_unlock(&mutex_);
    return m;
 }
 

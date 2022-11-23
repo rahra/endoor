@@ -190,6 +190,7 @@ void usage(const char *cmd)
 {
    printf(
          "usage: %s [options]\n"
+         "  -a <age> .......... Set max age of addresses. 0 means infinity.\n"
          "  -d ................ Output debug info.\n"
          "  -i <inif> ......... Name of inside interface.\n"
          "  -o <outif> ........ Name of outside interface.\n"
@@ -217,6 +218,11 @@ int main(int argc, char **argv)
    {
       switch (c)
       {
+         case 'a':
+            set_max_age(atoi(optarg));
+            log_msg(LOG_DEBUG, "max_age_ = %d", set_max_age(-1));
+            break;
+
          case 'd':
             debug_level_ = 7;
             break;
