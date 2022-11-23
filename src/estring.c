@@ -45,6 +45,7 @@
 #include "protoaddr.h"
 #include "log.h"
 #include "state.h"
+#include "json.h"
 
 
 /*! Convert a network address of type family to a character string. This
@@ -147,6 +148,57 @@ int snprint_palist(char *buf, int len, const proto_addr_t *pa, int indent)
       }
    }
 
+   return tlen;
+}
+
+
+static int fprintj_palist0(FILE *f, const proto_addr_t *pa, int indent)
+{
+   int i, j, tlen = 0;
+   char addr[128];
+
+   if (pa->cnt <= 0)
+      return 0;
+
+   flabel(f, "addresses", indent);
+   //findent(f, indent);
+   fochar(f, '[');
+   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
+   {
+      if (!pa->list[i].family)
+         continue;
+
+      addr_ntop(pa->list[i].family, pa->list[i].addr, addr, sizeof(addr));
+      findent(f, indent);
+      fochar(f, '{');
+      fint(f, "type", pa->list[i].family, indent + 1);
+      fstring(f, "addr", addr, indent + 1);
+      fint(f, "time", pa->list[i].age, indent + 1);
+
+      if (pa->list[i].cnt)
+      {
+         //fochar(f, '[');
+         fprintj_palist0(f, &pa->list[i], indent + 1);
+         //funsep(f);
+         //fcchar(f, ']');
+      }
+      funsep(f);
+      findent(f, indent);
+      fcchar(f, '}');
+   }
+   funsep(f);
+   findent(f, indent);
+   fcchar(f, ']');
+
+   return tlen;
+}
+
+
+int fprintj_palist(FILE *f, proto_addr_t *pa, int indent)
+{
+   pthread_mutex_lock(&pa->mutex);
+   int tlen = fprintj_palist0(f, pa, indent);
+   pthread_mutex_unlock(&pa->mutex);
    return tlen;
 }
 

@@ -12,13 +12,14 @@ int strpos(const char *s, int c);
 int bs_stresc(bstring_t src, char *dst, int dlen, const char *echars, const char *uchars);
 int stresc(const char *src, int slen, char *dst, int dlen, const char *echars, const char *uchars);
 int jesc(const char *src, int slen, char *dst, int dlen);
-void findent(FILE *f, int n);
-void funsep(FILE *f);
-void fochar(FILE *f, char c);
-void fcchar(FILE *f, char c);
-void fint(FILE *f, const char *k, long v, int indent);
-void fbstring(FILE *f, const char *k, const bstring_t *v, int indent);
-void fstring(FILE *f, const char *k, const char *v, int indent);
+int findent(FILE *f, int n);
+int funsep(FILE *f);
+int fochar(FILE *f, char c);
+int fcchar(FILE *f, char c);
+int flabel(FILE *f, const char *k, int indent);
+int fint(FILE *f, const char *k, long v, int indent);
+int fbstring(FILE *f, const char *k, const bstring_t *v, int indent);
+int fstring(FILE *f, const char *k, const char *v, int indent);
 
 #endif
 

@@ -116,7 +116,7 @@ int set_hwrouter(if_info_t *ii, const char *s)
 }
 
 
-void j_if_info(FILE *f, if_info_t *ii, int indent)
+static void j_if_info(FILE *f, if_info_t *ii, int indent)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
 
@@ -133,6 +133,7 @@ void j_if_info(FILE *f, if_info_t *ii, int indent)
    fstring(f, "hwaddr", hwaddr, indent + 1);
    fstring(f, "hwclient", hwclient, indent + 1);
    fstring(f, "hwrouter", hwrouter, indent + 1);
+   fprintj_palist(f, &ii->mtbl, indent + 1);
    funsep(f);
    findent(f, indent);
    fcchar(f, '}');
@@ -140,7 +141,25 @@ void j_if_info(FILE *f, if_info_t *ii, int indent)
 }
 
 
-void print_if_info(FILE *f, if_info_t *ii)
+static void j_dump(FILE *f, if_info_t *ii, int n)
+{
+   int i;
+
+   fochar(f, '{');
+   flabel(f, "interfaces", 1);
+   fochar(f, '[');
+   for (i = 0; i < n; i++)
+      j_if_info(f, &ii[i], 1);
+   funsep(f);
+   findent(f, 1);
+   fcchar(f, ']');
+   funsep(f);
+   fcchar(f, '}');
+   funsep(f);
+}
+
+
+static void print_if_info(FILE *f, if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
 
@@ -166,7 +185,7 @@ void print_if_info(FILE *f, if_info_t *ii)
 }
 
 
-void cli_help(FILE *f)
+static void cli_help(FILE *f)
 {
    fprintf(f,
          "addr ......... List address tables.\n"
@@ -267,8 +286,7 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
 
          if ((fout = fopen("dump.json", "w")) != NULL)
          {
-            for (i = 0; i < n; i++)
-               j_if_info(fout, &ii[i], 0);
+            j_dump(fout, ii, 3);
             fclose(fout);
          }
          else

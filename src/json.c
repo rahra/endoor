@@ -62,27 +62,27 @@ int strpos(const char *s, int c)
  * the terminating \0 char, i.e. it is the strlen(dst).
  * In case of error, -1 is returned.
  */
-int bs_stresc(bstring_t src, char *dst, int dlen, const char *echars, const char *uchars)
+int stresc(const char *src, int slen, char *dst, int dlen, const char *echars, const char *uchars)
 {
    int len, n;
 
    // safety check
-   if (src.buf == NULL || echars == NULL || uchars == NULL || strlen(echars) != strlen(uchars))
+   if (src == NULL || echars == NULL || uchars == NULL || strlen(echars) != strlen(uchars))
    {
       log_msg(LOG_EMERG, "NULL pointer caught, or strlen(echars) != strlen(uchars))");
       return -1;
    }
 
    if (dst == NULL)
-      dlen = src.len * 2 + 1;
+      dlen = slen * 2 + 1;
 
    dlen--;
-   for (len = 0; src.len > 0 && len < dlen; src.buf++, src.len--, len++, dst++)
+   for (len = 0; slen > 0 && len < dlen; src++, slen--, len++, dst++)
    {
-      if ((n = strpos(echars, *src.buf)) == -1)
+      if ((n = strpos(echars, *src)) == -1)
       {
          if (dst != NULL)
-            *dst = *src.buf;
+            *dst = *src;
          continue;
       }
 
@@ -106,81 +106,80 @@ int bs_stresc(bstring_t src, char *dst, int dlen, const char *echars, const char
 }
 
 
-/*! This function is a wrapper for bs_stresc(). */
-int stresc(const char *src, int slen, char *dst, int dlen, const char *echars, const char *uchars)
-{
-   return bs_stresc((bstring_t) {slen, (char*) src}, dst, dlen, echars, uchars);
-}
-
-
 int jesc(const char *src, int slen, char *dst, int dlen)
 {
    return stresc(src, slen, dst, dlen, "\"\\/\b\f\n\r\t", "\"\\/bfnrt");
 }
 
 
-void findent(FILE *f, int n)
+int findent(FILE *f, int n)
 {
    if (condensed_ || !indent_)
-      return;
+      return 0;
 
    int len = n * INDENT;
    char buf[n * INDENT];
 
    memset(buf, ' ', len);
-   fwrite(buf, len, 1, f);
+   return fwrite(buf, 1, len, f);
 }
 
 
-void funsep(FILE *f)
+int funsep(FILE *f)
 {
    fseek(f, -2, SEEK_CUR);
-   fprintf(f, "%c", CCHAR);
+   return fprintf(f, "%c", CCHAR);
 }
 
 
-void fochar(FILE *f, char c)
+int fochar(FILE *f, char c)
 {
-   fprintf(f, "%c%c", c, CCHAR);
+   return fprintf(f, "%c%c", c, CCHAR);
 }
 
 
-void fcchar(FILE *f, char c)
+int fcchar(FILE *f, char c)
 {
-   fprintf(f, "%c,%c", c, CCHAR);
+   return fprintf(f, "%c,%c", c, CCHAR);
 }
 
 
-void fint(FILE *f, const char *k, long v, int indent)
+int flabel(FILE *f, const char *k, int indent)
 {
-   findent(f, indent);
-   fprintf(f, "\"%s\": %ld,%c", k, v, CCHAR);
+   int in = findent(f, indent);
+   return fprintf(f, "\"%s\": ", k) + in;
 }
 
 
-void fbstring(FILE *f, const char *k, const bstring_t *v, int indent)
+int fint(FILE *f, const char *k, long v, int indent)
+{
+   int in = findent(f, indent);
+   return fprintf(f, "\"%s\": %ld,%c", k, v, CCHAR) + in;
+}
+
+
+int fbstring(FILE *f, const char *k, const bstring_t *v, int indent)
 {
    char buf[v->len * 2 + 2];
    int len;
 
    if ((len = jesc(v->buf, v->len, buf, sizeof(buf))) == -1)
-      return;
+      return 0;
 
-   findent(f, indent);
-   fprintf(f, "\"%s\": \"%.*s\",%c", k, len, buf, CCHAR);
+   int in = findent(f, indent);
+   return fprintf(f, "\"%s\": \"%.*s\",%c", k, len, buf, CCHAR) + in;
 }
 
 
-void fstring(FILE *f, const char *k, const char *v, int indent)
+int fstring(FILE *f, const char *k, const char *v, int indent)
 {
    char buf[strlen(v) * 2 + 2];
    int len;
 
    if ((len = jesc(v, strlen(v), buf, sizeof(buf))) == -1)
-      return;
+      return 0;
 
-   findent(f, indent);
-   fprintf(f, "\"%s\": \"%s\",%c", k, buf, CCHAR);
+   int in = findent(f, indent);
+   return fprintf(f, "\"%s\": \"%s\",%c", k, buf, CCHAR) + in;
 }
-
 

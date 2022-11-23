@@ -55,6 +55,7 @@ int snprint_proto_addr(char *, int , const proto_addr_t *);
 int snprint_palist(char *, int , const proto_addr_t *, int );
 int snprint_mac_table(char *, int , proto_addr_t *);
 int snprint_states(state_table_t *, char *, int );
+int fprintj_palist(FILE *, proto_addr_t *, int );
 
 #endif
 
