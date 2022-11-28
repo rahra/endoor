@@ -21,8 +21,8 @@
  *  \date 2022/09/14
  */
 
-#ifndef RWPACK_H
-#define RWPACK_H
+#ifndef ENDOOR_H
+#define ENDOOR_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

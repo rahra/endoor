@@ -46,7 +46,6 @@
 #endif
 
 #include "protoaddr.h"
-#include "log.h"
 #include "state.h"
 
 

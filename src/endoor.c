@@ -67,12 +67,42 @@
 #include "tun.h"
 #include "thread.h"
 #include "cli.h"
+#include "http.h"
 
 #define SNAPLEN 4096
 #define MACTABLESIZE 1024
 #define STATETABLESIZE 16384
 
 int set_hwrouter(if_info_t *, const char *);
+
+
+int init_tcp_listen(int port)
+{
+   int fd, so;
+   struct sockaddr_in saddr;
+
+   // create TCP/IP socket
+   if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+      perror("socket"), exit(EXIT_FAILURE);
+
+   // modify socket to allow reuse of address
+   so = 1;
+   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &so, sizeof(so)) == -1)
+      perror("setsockopt"), exit(EXIT_FAILURE);
+
+   // bind it to specific port number
+   saddr.sin_family = AF_INET;
+   saddr.sin_port = htons(port);
+   saddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+   if (bind(fd, (struct sockaddr*) &saddr, sizeof(saddr)) == -1)
+      perror("bind"), exit(EXIT_FAILURE);
+
+   // make it listening
+   if (listen(fd, 32) == -1)
+      perror("listen"), exit(EXIT_FAILURE);
+
+   return fd;
+}
 
 
 int init_socket(if_info_t *ii)
@@ -204,7 +234,7 @@ void usage(const char *cmd)
 
 int main(int argc, char **argv)
 {
-   int c;
+   int c, fd;
    if_info_t ii[3];
    char *pcapname = NULL;
    char *hwrouter = NULL;
@@ -299,6 +329,14 @@ int main(int argc, char **argv)
 
       snprintf(name, sizeof(name), "mnt%d", i);
       if (run_thread(name, maintainer, &ii[i]))
+         log_msg(LOG_ERR, "run_thread() failed"), exit(1);
+   }
+
+   fd = init_tcp_listen(8880);
+   for (int i = 0; i < 3; i++)
+   {
+      snprintf(name, sizeof(name), "http%d", i);
+      if (run_thread(name, handle_http, (void*) (intptr_t) fd))
          log_msg(LOG_ERR, "run_thread() failed"), exit(1);
    }
 

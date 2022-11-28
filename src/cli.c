@@ -207,9 +207,8 @@ static void cli_help(FILE *f)
  * @return Returns the number of arguments (argc) parsed into argv not counting
  * the last NULL element, which is 0 <= argc < size.
  */
-int parse_cmd(char *s, char **argv, int size)
+int parse_cmd0(char *s, char **argv, int size, const char *sep)
 {
-   const char *sep = " \r\n";
    char *r;
    int c = 0;
 
@@ -224,6 +223,12 @@ int parse_cmd(char *s, char **argv, int size)
       *argv = NULL;
 
    return c;
+}
+
+
+int parse_cmd(char *s, char **argv, int size)
+{
+   return parse_cmd0(s, argv, size, " \r\n");
 }
 
 

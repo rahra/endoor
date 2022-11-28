@@ -32,8 +32,8 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
+#include <net/ethernet.h>
 
-#include "endoor.h"
 
 #define MAX_STATE_AGE 180
 

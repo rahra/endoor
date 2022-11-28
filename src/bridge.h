@@ -33,9 +33,6 @@
 #include <linux/if.h>
 #endif
 
-#include "endoor.h"
-#include "pcap.h"
-#include "log.h"
 #include "protoaddr.h"
 #include "state.h"
 
