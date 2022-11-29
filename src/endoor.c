@@ -234,13 +234,15 @@ void usage(const char *cmd)
 
 int main(int argc, char **argv)
 {
-   int c, fd;
+   int c;
    if_info_t ii[3];
    char *pcapname = NULL;
    char *hwrouter = NULL;
    state_table_t st;
    char name[16];
+   http_param_t hp;
 
+   memset(&hp, 0, sizeof(hp));
    memset(ii, 0, sizeof(ii));
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
    strlcpy(ii[0].ifname, "eth1", sizeof(ii[0].ifname));
@@ -332,11 +334,12 @@ int main(int argc, char **argv)
          log_msg(LOG_ERR, "run_thread() failed"), exit(1);
    }
 
-   fd = init_tcp_listen(8880);
+   hp.fd = init_tcp_listen(8880);
+   hp.ii = &ii[1];
    for (int i = 0; i < 3; i++)
    {
       snprintf(name, sizeof(name), "http%d", i);
-      if (run_thread(name, handle_http, (void*) (intptr_t) fd))
+      if (run_thread(name, handle_http, &hp))
          log_msg(LOG_ERR, "run_thread() failed"), exit(1);
    }
 

@@ -203,6 +203,57 @@ int fprintj_palist(FILE *f, proto_addr_t *pa, int indent)
 }
 
 
+static int jpalist0(json_t *J, const proto_addr_t *pa, int indent)
+{
+   int i, j, tlen = 0;
+   char addr[128];
+
+   if (pa->cnt <= 0)
+      return 0;
+
+   jlabel(J, "addresses", indent);
+   //findent(f, indent);
+   jochar(J, '[');
+   for (i = 0, j = 0; i < pa->size && j < pa->cnt; i++)
+   {
+      if (!pa->list[i].family)
+         continue;
+
+      addr_ntop(pa->list[i].family, pa->list[i].addr, addr, sizeof(addr));
+      jindent(J, indent);
+      jochar(J, '{');
+      jint(J, "type", pa->list[i].family, indent + 1);
+      jstring(J, "addr", addr, indent + 1);
+      jint(J, "time", pa->list[i].age, indent + 1);
+
+      if (pa->list[i].cnt)
+      {
+         //fochar(f, '[');
+         jpalist0(J, &pa->list[i], indent + 1);
+         //funsep(f);
+         //fcchar(f, ']');
+      }
+      junsep(J);
+      jindent(J, indent);
+      jcchar(J, '}');
+   }
+   junsep(J);
+   jindent(J, indent);
+   jcchar(J, ']');
+
+   return tlen;
+}
+
+
+int jpalist(json_t *J, proto_addr_t *pa, int indent)
+{
+   pthread_mutex_lock(&pa->mutex);
+   int tlen = jpalist0(J, pa, indent);
+   pthread_mutex_unlock(&pa->mutex);
+   return tlen;
+}
+
+
 int snprint_mac_table(char *buf, int len, proto_addr_t *pa)
 {
    int i;

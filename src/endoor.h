@@ -85,6 +85,11 @@
 //! copy an IPv6 address from b to a
 #define IN6_ADDR_COPY(a,b) memcpy(a, b, sizeof(struct in6_addr))
 
+typedef struct http_param
+{
+   int fd;
+   struct if_info *ii;
+} http_param_t;
 
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dst, const char *src, size_t siz);

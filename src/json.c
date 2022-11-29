@@ -295,6 +295,23 @@ int jstring(json_t *J, const char *k, const char *v, int indent)
    if (!jgrow(J, len + 5))
       return 0;
 
-   return snprintf(J->buf + J->len, J->size - J->len, "\"%s\",%c", buf, jsep(J)) + in;
+   len = snprintf(J->buf + J->len, J->size - J->len, "\"%s\",%c", buf, jsep(J));
+   J->len += len;
+   return len + in;
+}
+
+
+int jinit(json_t *J)
+{
+   memset(J, 0, sizeof(*J));
+   return jrealloc(J);
+}
+
+
+void jfree(json_t *J)
+{
+   free(J->buf);
+   J->buf = NULL;
+   J->size = J->len = 0;
 }
 

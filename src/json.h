@@ -33,7 +33,8 @@ int jcchar(json_t*, char c);
 int jlabel(json_t*, const char *k, int indent);
 int jint(json_t*, const char *k, long v, int indent);
 int jstring(json_t*, const char *k, const char *v, int indent);
-
+int jinit(json_t *J);
+void jfree(json_t *J);
 
 #endif
 

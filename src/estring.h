@@ -15,7 +15,7 @@
  * along with Endoor. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*! \file estring.c
+/*! \file estring.h
  * This file contains various string functions for the output of information to
  * the CLI.
  *
@@ -47,6 +47,7 @@
 
 #include "protoaddr.h"
 #include "state.h"
+#include "json.h"
 
 
 int addr_ntop(int , const char *, char *, int );
@@ -55,6 +56,7 @@ int snprint_palist(char *, int , const proto_addr_t *, int );
 int snprint_mac_table(char *, int , proto_addr_t *);
 int snprint_states(state_table_t *, char *, int );
 int fprintj_palist(FILE *, proto_addr_t *, int );
+int jpalist(json_t*, proto_addr_t *, int );
 
 #endif
 
