@@ -42,6 +42,20 @@ network and attack ;)
 The 2 network interfaces are called "inside" and "outside" interface where
 inside is the interface to the node and outside is the interface to the network
 (see diagram above).
+
+First of all **you have to disable** _generic receive offloading_ (GRO) and
+_large receive offloading_ (LRO) on both interfaces. This is a hardware feature
+to speed up network throughput but in this case it will cause packet drops
+because Endoor processes and forwards frames in software. At some time I'll
+probably implement it directly into Endoor. It is done with the `ethtool`:
+
+```
+ethtool -K eth0 gro off
+ethtool -K eth0 lro off
+ethtool -K eth1 gro off
+ethtool -K eth1 lro off
+```
+
 These 2 network interfaces must be unconfigured and silent. That means set it
 up in such a way that there are no IP addresses configured and the DHCP client
 has to be disabled.
