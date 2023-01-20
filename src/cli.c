@@ -190,6 +190,7 @@ static void cli_help(FILE *f)
    fprintf(f,
          "addr ......... List address tables.\n"
          "debug ........ Set debug level to DEBUG (7).\n"
+         "dump ......... Dump address database to 'dump.json'.\n"
          "exit ......... Exit program.\n"
          "info ......... Show interface info.\n"
          "nodebug ...... Set debug level to INFO (6).\n"
