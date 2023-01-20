@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2023 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * address table).
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2023/01/20
  */
 
 #ifdef HAVE_CONFIG_H
@@ -233,8 +233,10 @@ int update_table(proto_addr_t *pa, const char *hwaddr, int family, const char *a
 }
 
 
-int test_proto_addr(proto_addr_t *src, proto_addr_t *dst)
+int test_proto_addr(const proto_addr_t *src, void *dst0)
 {
+   proto_addr_t *dst = dst0;
+
    if ((src->flags & dst->flags) == dst->flags && src->family == dst->family && src->hits > dst->hits)
    {
       memcpy(dst->addr, src->addr, addr_size(src->family));
@@ -245,13 +247,41 @@ int test_proto_addr(proto_addr_t *src, proto_addr_t *dst)
 }
 
 
+int test_ipv4_client(const proto_addr_t *src, void *dst0)
+{
+   proto_addr_t *dst = dst0;
+   proto_addr_t dst1 = *dst;
+
+   if (test_proto_addr(src, &dst1) == -1)
+      return -1;
+
+   // ignore source 0.0.0.0
+   if (!*((uint32_t*) dst1.addr))
+   {
+      log_msg(LOG_INFO, "ignoring source 0.0.0.0");
+      return -1;
+   }
+
+   // ignore 169.254.0.0/16
+   if ((ntohl(*((uint32_t*) dst1.addr)) & 0xffff0000) == 0xa9fe0000)
+   {
+      log_msg(LOG_INFO, "ignoring source 169.254.x.x");
+      return -1;
+   }
+
+   memcpy(dst->addr, dst1.addr, addr_size(dst1.family));
+   dst->hits = dst1.hits;
+   return 0;
+}
+
+
 /*! This function iterates over all entries in a protocol address list pa and
  * calls query() for each element.
  * @return The function returns the index to an element if an entry was found
  * by query. This index is 0 <= index < pa->size. If no entry was found
  * pa->size is returned.
  */
-int pa_iterate(proto_addr_t *pa, int (*query)(proto_addr_t *, void*), void *p)
+int pa_iterate(proto_addr_t *pa, int (*query)(const proto_addr_t *, void*), void *p)
 {
    int i, j, res, i0 = pa->size;
 
@@ -280,10 +310,10 @@ int search_router(proto_addr_t *pa, char *addr)
    dst.flags = PA_ROUTER;
 
    pthread_mutex_lock(&pa->mutex);
-   if ((res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) >= pa->size)
+   if ((res = pa_iterate(pa, test_proto_addr, &dst)) >= pa->size)
    {
       dst.flags = 0;
-      res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst);
+      res = pa_iterate(pa, test_proto_addr, &dst);
    }
    pthread_mutex_unlock(&pa->mutex);
 
@@ -305,12 +335,12 @@ int search_client(proto_addr_t *pa, char *hwaddr, char *addr)
    //dst.flags = PA_CLIENT;
 
    pthread_mutex_lock(&pa->mutex);
-   if ((res = pa_iterate(pa, (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) < pa->size)
+   if ((res = pa_iterate(pa, test_proto_addr, &dst)) < pa->size)
    {
       HWADDR_COPY(hwaddr, dst.addr);
       dst.family = AF_INET;
       dst.hits = 0;
-      if ((res = pa_iterate(&pa->list[res], (int (*)(proto_addr_t*, void*)) test_proto_addr, &dst)) < pa->size)
+      if ((res = pa_iterate(&pa->list[res], test_ipv4_client, &dst)) < pa->size)
          memcpy(addr, dst.addr, addr_size(dst.family));
    }
    pthread_mutex_unlock(&pa->mutex);
