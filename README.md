@@ -56,9 +56,9 @@ ethtool -K eth1 gro off
 ethtool -K eth1 lro off
 ```
 
-These 2 network interfaces must be unconfigured and silent. That means set it
-up in such a way that there are no IP addresses configured and the DHCP client
-has to be disabled.
+These 2 network interfaces shoud be completely unconfigured and silent. That
+means set it up in such a way that there are no IP addresses configured and the
+DHCP client has to be disabled (otherwise the Endoor device may reveal itself).
 
 If you use a Raspberry Pi, edit the file `/etc/dhcpcd.conf` and add the
 following 2 lines (assuming eth0 and eth1 are the inside and the outside
