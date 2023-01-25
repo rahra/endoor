@@ -20,5 +20,8 @@ do
 
    ip6tables -A INPUT -i $net -j DROP
    ip6tables -A OUTPUT -o $net -j DROP
+
+   ethtool -K $net gro off
+   ethtool -K $net lro off
 done
 
