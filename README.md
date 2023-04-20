@@ -87,6 +87,8 @@ make
 sudo make install
 ```
 
+# Starting Endoor
+
 You can now start endoor directly on the command line:
 ```
 endoor -i eth0 -o eth1
@@ -96,10 +98,16 @@ It will immediately start to forward frames and will open a command line
 interface. The command line is mainly for debugging. Use `help` to get a list
 of commands.
 
-Endoor will learn addresses from the network and tries to find the clients IP
+Endoor will learn addresses from the network and tries to find the client's IP
 address and MAC address as well as the MAC address of the router in the
 network. Once it found it it will open and configure a tunnel device (tun0).
 The victim's device's IP address will be set locally on the tunnel device.
+
+*Note:* Please note that the router detection is not very robust yet. You may
+find the router's MAC address manually by looking at the address table (command
+`addr`, or `dump`, or use the HTTP API as explained below). You can then set
+the address either with the command line option `-r` or on the CLI with the
+command `router`. Endoor will not override this manual setting.
 
 From the address table in the command line you may have learned from the IP
 range of the victim's network. Let's assume all internal addresses are in the
@@ -117,7 +125,7 @@ ping 192.168.17.23
 ```
 
 Endoor will send all packets coming in locally through the tunnel device the
-victim's network with a source address of the victim's node's IP an MAC
+victim's network with a source address of the victim's node's IP and MAC
 address.
 Internally, endoor builds up a state table. Incoming packets from the victim's
 network are matched against the state table and all packets with a proper state
@@ -129,6 +137,15 @@ Currently this is TCP, UDP, and ICMP echo requests.
 
 But that's more than enough for now, you can e.g. `nmap` through it ;)
 
+# API
+
+There is a tiny HTTP API which allows you to dump the address table from within
+a script.
+It is bound to port 8880. Dump with the following command:
+
+```
+curl http://localhost:8880/api/v1/?dump
+```
 
 # Detectability
 
