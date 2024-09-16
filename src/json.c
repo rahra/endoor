@@ -25,7 +25,7 @@ static int condensed_ = 0;
 static int indent_ = 1;
 
 
-/*! This function returns the index of the first occurence if c in the string
+/*! This function returns the index of the first occurence of c in the string
  * s.
  * \param s Pointer to string.
  * \param c Character to search for in s.
@@ -45,7 +45,7 @@ int strpos(const char *s, int c)
 /*! This function escapes characters in the string src and puts the resulting
  * string into dst. The chars are escape with a backslash. Thereby all chars
  * found in echars are replaced by the corresponding character in uchars and
- * prepended by a single backslash.
+ * are prepended by a single backslash.
  * The destination buffer dst obviously must be bigger than src. In the worst
  * case it is twice as large as src if every charcter has to be escaped. The
  * destination buffer will be 0-terminated, thus the buffer must also have 1
@@ -87,7 +87,7 @@ int stresc(const char *src, int slen, char *dst, int dlen, const char *echars, c
          continue;
       }
 
-      // check if there is enough space in destinatin
+      // check if there is enough space in destination
       if (dlen - len < 2)
          return -1;
 

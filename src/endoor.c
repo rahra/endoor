@@ -318,7 +318,7 @@ int main(int argc, char **argv)
    ii[2].filter = filter_out_tunnel;
    ii[2].if_maintainer = (void *(*)(void*)) state_maintainer;
    ii[2].st = &st;
-   // set invalid address to tunnel if struct to circument detection of own address which is (0:0:0:0:0:0)
+   // set invalid address to tunnel if struct to avoid detection of own address which is (0:0:0:0:0:0)
    memset(ii[2].hwaddr, -1, ETHER_ADDR_LEN);
 
    ii[1].wfd = ii[0].wfd;
