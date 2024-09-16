@@ -46,7 +46,7 @@
 #define SNAPLEN 4096
 
 
-/*! This is an accept filter. It always return FI_ACCEPT without any other
+/*! This is an accept filter. It always returns FI_ACCEPT without any other
  * action.
  * @param ii Pointer to interface info struct.
  * @param buf Pointer to data buffer.
@@ -105,8 +105,7 @@ int filter_in_outside(if_info_t *ii, char *buf, int len)
 
 
 /*! This is the filter for all frames which go out on the tunnel interface. It
- * maintains the state table.
- * protocols are dropped.
+ * maintains the state table. Unsupported protocols are dropped.
  * @param ii Pointer to interface info struct.
  * @param buf Pointer to data buffer.
  * @param len Length of data in buffer.

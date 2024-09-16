@@ -16,7 +16,7 @@
  */
 
 /*! \file pcap.c
- * This file contains the code for writing pcap file.
+ * This file contains the code for writing a pcap file.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
  *  \date 2022/09/13

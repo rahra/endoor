@@ -68,8 +68,8 @@ denyinterfaces eth0
 denyinterfaces eth1
 ```
 
-I also suggest to disable any service accept sshd. Disable IPV6
-auto-configuration and acception of router advertisements. This is necessary to
+I also suggest to disable any service except sshd. Disable IPV6
+auto-configuration and do not accept router advertisements. This is necessary to
 not reveal your device (see `files/osprep` of the source package).
 ```
 sysctl -w net.ipv4.conf.all.forwarding=0
@@ -100,7 +100,7 @@ of commands.
 
 Endoor will learn addresses from the network and tries to find the client's IP
 address and MAC address as well as the MAC address of the router in the
-network. Once it found it it will open and configure a tunnel device (tun0).
+network. Once found, it will open and configure a tunnel device (tun0).
 The victim's device's IP address will be set locally on the tunnel device.
 
 *Note:* Please note that the router detection is not very robust yet. You may
@@ -109,7 +109,7 @@ find the router's MAC address manually by looking at the address table (command
 the address either with the command line option `-r` or on the CLI with the
 command `router`. Endoor will not override this manual setting.
 
-From the address table in the command line you may have learned from the IP
+From the address table in the command line you may have learned about the IP
 range of the victim's network. Let's assume all internal addresses are in the
 range of 192.168.0.0/16.
 
@@ -124,15 +124,18 @@ device, e.g.:
 ping 192.168.17.23
 ```
 
-Endoor will send all packets coming in locally through the tunnel device the
-victim's network with a source address of the victim's node's IP and MAC
+Endoor will send all packets coming in locally on the tunnel device to the
+victim's network with a source address of the victim's node's IP an MAC
 address.
-Internally, endoor builds up a state table. Incoming packets from the victim's
+Internally, endoor builds up a state table. Returning packets from the victim's
 network are matched against the state table and all packets with a proper state
-are then diverted back to the tunnel device.
+are then diverted back to the tunnel device. All other packets are sent back to
+the node. This state-based traffic splitting allows that the endoor device and
+the victim's node both can access the network although using the same MAC and
+IP address.
 
 Since the states depend on the higher layer protocols, only protocols which are
-implemented within Endoor are supported.
+implemented within Endoor are supported (from the Endoor's point of view).
 Currently this is TCP, UDP, and ICMP echo requests.
 
 But that's more than enough for now, you can e.g. `nmap` through it ;)

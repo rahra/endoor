@@ -70,7 +70,7 @@ int new_state_table(state_table_t *st, int n)
 }
 
 
-/*! Get index if an unused state entry.
+/*! Get index of an unused state entry.
  * @param st Pointer to state table struct.
  * @return The function returnes a integer of an empty state entry. If the
  * state table is full, st->size is returned.
