@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * between the 3 interfaces.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2025/06/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -42,6 +42,7 @@
 #include "tun.h"
 #include "state.h"
 #include "thread.h"
+#include "estring.h"
 
 #define SNAPLEN 4096
 
@@ -200,7 +201,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
       //log_msg(LOG_DEBUG, "ignoring own frame on %s", ii->ifname);
       return FI_DROP;
    }
-   ether_ntoa_r(addr, addrstr);
+   ether_ntoa_rz(addr, addrstr);
 
    switch (ntohs(eh->ether_type))
    {

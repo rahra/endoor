@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * the CLI.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/19
+ *  \date 2025/06/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -48,10 +48,26 @@
 #include "json.h"
 
 
+/*! Convert Ethernet address to string like ether_ntoa_r(3) but with leading
+ * zeros.
+ * @param addr Pointer to network address.
+ * @param buf Pointer to destination buffer.
+ * @return Returns buf.
+ */
+char *ether_ntoa_rz(const struct ether_addr *addr, char *buf)
+{
+    sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+            addr->ether_addr_octet[0], addr->ether_addr_octet[1],
+            addr->ether_addr_octet[2], addr->ether_addr_octet[3],
+            addr->ether_addr_octet[4], addr->ether_addr_octet[5]);
+    return buf;
+}
+
+
 /*! Convert a network address of type family to a character string. This
  * function is similar to inet_ntop(3) but can also convert ethernet addresses
  * (AF_PACKET).
- * @param family Adress family (AF_INET, AF_INET6, AD_PACKET).
+ * @param family Adress family (AF_INET, AF_INET6, AF_PACKET).
  * @param src Pointer to network address.
  * @param dst Pointer to destination buffer.
  * @param len Length of destination buffer.
@@ -77,11 +93,11 @@ int addr_ntop(int family, const char *src, char *dst, int len)
       case AF_PACKET:
          if (len >= 19)
          {
-            ether_ntoa_r((struct ether_addr*) src, dst);
+            ether_ntoa_rz((struct ether_addr*) src, dst);
          }
          else
          {
-            log_msg(LOG_ERR, "buffer too small for ether_ntoa_r()");
+            log_msg(LOG_ERR, "buffer too small for ether_ntoa_rz()");
             *dst = '\0';
          }
          break;

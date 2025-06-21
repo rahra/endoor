@@ -50,6 +50,7 @@
 #include "json.h"
 
 
+char *ether_ntoa_rz(const struct ether_addr *, char *);
 int addr_ntop(int , const char *, char *, int );
 int snprint_proto_addr(char *, int , const proto_addr_t *);
 int snprint_palist(char *, int , const proto_addr_t *, int );

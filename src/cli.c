@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -19,7 +19,7 @@
  * This file contains the code for the cli.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/19
+ *  \date 2025/06/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -120,10 +120,10 @@ static void j_if_info(FILE *f, if_info_t *ii, int indent)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
 
-   ether_ntoa_r((struct ether_addr*) ii->hwaddr, hwaddr);
+   ether_ntoa_rz((struct ether_addr*) ii->hwaddr, hwaddr);
    pthread_mutex_lock(&ii->mutex);
-   ether_ntoa_r((struct ether_addr*) ii->hwclient, hwclient);
-   ether_ntoa_r((struct ether_addr*) ii->hwrouter, hwrouter);
+   ether_ntoa_rz((struct ether_addr*) ii->hwclient, hwclient);
+   ether_ntoa_rz((struct ether_addr*) ii->hwrouter, hwrouter);
    pthread_mutex_unlock(&ii->mutex);
 
    findent(f, indent);
@@ -163,10 +163,10 @@ static void print_if_info(FILE *f, if_info_t *ii)
 {
    char hwaddr[32], hwclient[32], hwrouter[32];
 
-   ether_ntoa_r((struct ether_addr*) ii->hwaddr, hwaddr);
+   ether_ntoa_rz((struct ether_addr*) ii->hwaddr, hwaddr);
    pthread_mutex_lock(&ii->mutex);
-   ether_ntoa_r((struct ether_addr*) ii->hwclient, hwclient);
-   ether_ntoa_r((struct ether_addr*) ii->hwrouter, hwrouter);
+   ether_ntoa_rz((struct ether_addr*) ii->hwclient, hwclient);
+   ether_ntoa_rz((struct ether_addr*) ii->hwrouter, hwrouter);
    pthread_mutex_unlock(&ii->mutex);
 
    fprintf(f, 
