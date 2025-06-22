@@ -5,6 +5,8 @@
  *
  *  \author Bernhard R. Fischer, <bf@abenteuerland.at>
  *  \date 2022/04/06
+ *
+ *  FIXME: The buffer growing mechanism doesn't work properly!
  */
 
 #ifdef HAVE_CONFIG_H
