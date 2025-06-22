@@ -299,7 +299,7 @@ int write_out(if_info_t *ii, const char *buf, int len)
  
 
 /*! This is the frame forwarder.
- * It receives frames processes it through proc_src_addr() and the calls the
+ * It receives frames, processes it through proc_src_addr() and then calls the
  * filter. If proc_src_addr() returns FI_DROP, the frame is dropped and the
  * next incoming frame is processed.
  * If proc_src_addr() returns FI_ACCEPT, the filter is called. If the filter
