@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * address table).
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2025/07/01
  */
 
 #ifndef PROTOADDR_H
@@ -65,10 +65,9 @@ typedef struct proto_addr
 
 int init_mac_table(proto_addr_t *, int , int );
 int update_table(proto_addr_t *, const char *, int , const char *, int );
-void pa_cleanup(proto_addr_t *);
+void pa_cleanup(proto_addr_t *, int);
 int search_router(proto_addr_t *, char *);
 int search_client(proto_addr_t *, char *, char *);
-int set_max_age(int);
 
 #endif
 

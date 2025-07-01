@@ -1,4 +1,4 @@
-/* Copyright 2022-2023 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * address table).
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2023/01/20
+ *  \date 2025/07/01
  */
 
 #ifdef HAVE_CONFIG_H
@@ -45,27 +45,6 @@
 #include "protoaddr.h"
 #include "log.h"
 #include "estring.h"
-
-static int max_age_ = MAX_AGE;
-static pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
-
-
-/*! Set the maximum age of the entries in the address table.
- * @param age Maximum age in seconds. 0 means infinite age. Negative values are
- * ignored.
- * @return The function returns the age which was previously set. If age was
- * set to a negative value it will return the current value without changing
- * it.
- */
-int set_max_age(int age)
-{
-   pthread_mutex_lock(&mutex_);
-   int m = max_age_;
-   if (age >= 0)
-      max_age_ = age;
-   pthread_mutex_unlock(&mutex_);
-   return m;
-}
 
 
 /*! Init an allocate memory for a protocol address list of n available protocol
@@ -353,7 +332,7 @@ int search_client(proto_addr_t *pa, char *hwaddr, char *addr)
  * list if the entries are older than MAX_AGE seconds.
  * @param pa Pointer to protocol address list.
  */
-void pa_cleanup0(proto_addr_t *pa)
+void pa_cleanup0(proto_addr_t *pa, int max_age)
 {
    char addr[64];
    time_t t = time(NULL);
@@ -368,14 +347,14 @@ void pa_cleanup0(proto_addr_t *pa)
 
       // recursively clean sub-entries
       if (pa->list[i].cnt)
-         pa_cleanup0(&pa->list[i]);
+         pa_cleanup0(&pa->list[i], max_age);
 
       // do not remove this entry if there are still sub-entries
       if (pa->list[i].cnt)
          continue;
  
       // ignore young entries
-      if (!max_age_ || pa->list[i].age + max_age_ > t)
+      if (!max_age || pa->list[i].age + max_age > t)
          continue;
 
       addr_ntop(pa->list[i].family, pa->list[i].addr, addr, sizeof(addr));
@@ -389,10 +368,10 @@ void pa_cleanup0(proto_addr_t *pa)
 /*! Clean mac address table of old entries. This function is thread-safe.
  * @param pa Pointer to protocol address list.
  */
-void pa_cleanup(proto_addr_t *pa)
+void pa_cleanup(proto_addr_t *pa, int max_age)
 {
    pthread_mutex_lock(&pa->mutex);
-   pa_cleanup0(pa);
+   pa_cleanup0(pa, max_age);
    pthread_mutex_unlock(&pa->mutex);
 }
 

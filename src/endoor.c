@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * the cli.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/13
+ *  \date 2025/07/01
  */
 
 #ifdef HAVE_CONFIG_H
@@ -74,6 +74,27 @@
 #define STATETABLESIZE 16384
 
 int set_hwrouter(if_info_t *, const char *);
+
+static int max_age_ = MAX_AGE;
+static pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
+
+
+/*! Set the maximum age of the entries in the address table.
+ * @param age Maximum age in seconds. 0 means infinite age. Negative values are
+ * ignored.
+ * @return The function returns the age which was previously set. If age was
+ * set to a negative value it will return the current value without changing
+ * it.
+ */
+int set_max_age(int age)
+{
+   pthread_mutex_lock(&mutex_);
+   int m = max_age_;
+   if (age >= 0)
+      max_age_ = age;
+   pthread_mutex_unlock(&mutex_);
+   return m;
+}
 
 
 int init_tcp_listen(int port)
@@ -148,7 +169,7 @@ void *outside_if_maintainer(if_info_t *ii)
 {
    char hwaddr[ETHER_ADDR_LEN];
 
-   pa_cleanup(&ii->mtbl);
+   pa_cleanup(&ii->mtbl, max_age_);
    if (ii->router_valid < 2 && search_router(&ii->mtbl, hwaddr) < ii->mtbl.size)
    {
       //log_msg(LOG_DEBUG, "router found");
