@@ -90,6 +90,7 @@ int handle_request(int fd, if_info_t *ii)
    {
       code = 200;
       jochar(&J, '{');
+      jint(&J, "curtime", time(NULL), 1);
       jpalist(&J, &ii->mtbl, 1);
       junsep(&J);
       jcchar(&J, '}');
