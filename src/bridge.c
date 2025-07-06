@@ -20,7 +20,7 @@
  * between the 3 interfaces.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/06/21
+ *  \date 2025/07/05
  */
 
 #ifdef HAVE_CONFIG_H
@@ -150,7 +150,15 @@ int filter_out_tunnel(if_info_t *ii, char *buf, int len)
 }
 
 
-int handle_udp(const struct udphdr *uh, int len, char *dst, int size)
+/*! This function handles addresses within UDP protocols.
+ * FIXME: Not implemented yet!
+ * @param uh Pointer to UDP header.
+ * @param len Length of UDP packet including the header.
+ * @param dst Pointer to buffer....
+ * @param size Size of buffer.
+ * @return On success 0 is returned, otherwise -1.
+ */
+int handle_udp(const struct udphdr *uh, int len, char *UNUSED(dst), int UNUSED(size))
 {
    len -= sizeof(*uh);
    if (len < 0)
@@ -185,7 +193,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
    struct icmp6_hdr *icmp6;
    int family = AF_PACKET;
    void *addr;
-   char addrstr[32];
+   //char addrstr[32];
    int flags = 0;
 
    if (len < (int) sizeof(*eh))
@@ -201,7 +209,7 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
       //log_msg(LOG_DEBUG, "ignoring own frame on %s", ii->ifname);
       return FI_DROP;
    }
-   ether_ntoa_rz(addr, addrstr);
+   //ether_ntoa_rz(addr, addrstr);
 
    switch (ntohs(eh->ether_type))
    {
@@ -223,6 +231,15 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
          if (len < 0)
             break;
          ih = (struct iphdr*) (eh + 1);
+
+         // is Ethernet destination multicast?
+         if (eh->ether_dst[0] & 1 && ih->saddr != INADDR_ANY)
+         {
+            family = AF_INET;
+            addr = &ih->saddr;
+            break;
+         }
+
          char *next = (char*) ih + ih->ihl * 4;
          len -= ih->ihl * 4;
 
@@ -235,6 +252,14 @@ int proc_src_addr(if_info_t *ii, const char *buf, int len)
             break;
 
          i6h = (struct ip6_hdr*) (eh + 1);
+         // check for link local multicasts
+         if (IN6_IS_ADDR_MC_LINKLOCAL(&i6h->ip6_dst) && !IN6_IS_ADDR_UNSPECIFIED(&i6h->ip6_src))
+         {
+            family = AF_INET6;
+            addr = &i6h->ip6_src;
+            break;
+         }
+         // check for ICMPv6 (NDP)
          if (i6h->ip6_nxt == IPPROTO_ICMPV6)
          {
             if (len < (int) sizeof(*i6h) + (int) sizeof(*icmp6))
