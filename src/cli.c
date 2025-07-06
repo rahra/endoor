@@ -19,7 +19,7 @@
  * This file contains the code for the cli.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/06/21
+ *  \date 2025/07/06
  */
 
 #ifdef HAVE_CONFIG_H
