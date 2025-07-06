@@ -192,6 +192,7 @@ static void cli_help(FILE *f)
          "debug ........ Set debug level to DEBUG (7).\n"
          "dump ......... Dump address database to 'dump.json'.\n"
          "exit ......... Exit program.\n"
+         "expire <sec> . Expire all addresses older than <sec> seconds.\n"
          "info ......... Show interface info.\n"
          "nodebug ...... Set debug level to INFO (6).\n"
          "router <hw> .. Set router hardware address.\n"
@@ -297,6 +298,21 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
          }
          else
             fprintf(f, "failed to open file\n");
+      }
+      else if (!strcmp(argv[0], "expire"))
+      {
+         if (argc > 1)
+         {
+            int max_age = atoi(argv[1]);
+            for (int i = 0; i < 3; i++)
+               pa_cleanup(&ii[i].mtbl, max_age);
+         }
+         else
+            fprintf(f, "need expiry seconds\n");
+      }
+      else
+      {
+         fprintf(f, "*** unknown command <%s>\n", argv[0]);
       }
    }
    fprintf(f, "Good bye!\n");
