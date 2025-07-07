@@ -190,6 +190,11 @@ int fstring(FILE *f, const char *k, const char *v, int indent)
 }
 
 
+/* This function increases the JSON output buffer by JBUFBLK bytes.
+ * @param J Pointer to JSON handling structure.
+ * @return On success 0 is returned, otherwise -1 and errno is set
+ * appropriately.
+ */
 int jrealloc(json_t *J)
 {
    char *buf;
@@ -205,12 +210,18 @@ int jrealloc(json_t *J)
 }
 
 
+/*! This function grows the JSON output buffer that len bytes fit into it.
+ * @param J Pointer to JSON handling structure.
+ * @param len Number of additional bytes to fit into the buffer.
+ * @return On success 0 is returned, otherwise -1 and errno is set
+ * appropriately.
+ */
 int jgrow(json_t *J, int len)
 {
    while (J->size - J->len < len)
       if (jrealloc(J) == -1)
-         return 0;
-   return 1;
+         return -1;
+   return 0;
 }
 
 
@@ -227,7 +238,8 @@ int jindent(json_t *J, int n)
 
    int len = n * INDENT;
 
-   if (!jgrow(J, len))
+   // return if jgrow() fails
+   if (jgrow(J, len))
       return 0;
 
    memset(J->buf + J->len, ' ', len);
@@ -249,7 +261,8 @@ int junsep(json_t *J)
 
 int jochar(json_t *J, char c)
 {
-   if (!jgrow(J, 2))
+   // return if jgrow() fails
+   if (jgrow(J, 2))
       return 0;
 
    J->buf[J->len++] = c;
@@ -260,7 +273,8 @@ int jochar(json_t *J, char c)
 
 int jcchar(json_t *J, char c)
 {
-   if (!jgrow(J, 3))
+   // return if jgrow() fails
+   if (jgrow(J, 3))
       return 0;
 
    J->buf[J->len++] = c;
@@ -278,7 +292,7 @@ int jlabel(json_t *J, const char *k, int indent)
    for (len = J->size; len >= J->size - J->len;)
    {
       len = snprintf(J->buf + J->len, J->size - J->len, "\"%s\": ", k);
-      if (len >= J->size - J->len && !jgrow(J, len + 1))
+      if (len >= J->size - J->len && jgrow(J, len + 1))
          return 0;
    }
    J->len += len;
@@ -294,7 +308,7 @@ int jint(json_t *J, const char *k, long v, int indent)
    for (len = J->size; len >= J->size - J->len;)
    {
       len = snprintf(J->buf + J->len, J->size - J->len, "%ld,%c", v, jsep(J));
-      if (len >= J->size - J->len && !jgrow(J, len + 1))
+      if (len >= J->size - J->len && jgrow(J, len + 1))
          return 0;
    }
    J->len += len;
@@ -311,7 +325,7 @@ int jstring(json_t *J, const char *k, const char *v, int indent)
    if ((len = jesc(v, strlen(v), buf, sizeof(buf))) == -1)
       return 0;
 
-   if (!jgrow(J, len + 5))
+   if (jgrow(J, len + 5))
       return 0;
 
    len = snprintf(J->buf + J->len, J->size - J->len, "\"%s\",%c", buf, jsep(J));
