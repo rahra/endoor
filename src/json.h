@@ -28,7 +28,7 @@
 
 #define INDENT 3
 #define CCHAR (condensed_ ? ' ' : '\n')
-#define JBUFBLK 65536
+#define JBUFBLK 4096
 
 
 typedef struct json

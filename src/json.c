@@ -21,9 +21,7 @@
  * https://www.json.org/json-en.html
  *
  *  \author Bernhard R. Fischer, <bf@abenteuerland.at>
- *  \date 2022/04/06
- *
- *  FIXME: The buffer growing mechanism doesn't work properly!
+ *  \date 2025/07/07
  */
 
 #ifdef HAVE_CONFIG_H
@@ -210,7 +208,9 @@ int jrealloc(json_t *J)
 }
 
 
-/*! This function grows the JSON output buffer that len bytes fit into it.
+/*! This function grows the JSON output buffer that len bytes fit into it. The
+ * buffer is not resized if len already fits into it, so repeated calls do not
+ * change anything.
  * @param J Pointer to JSON handling structure.
  * @param len Number of additional bytes to fit into the buffer.
  * @return On success 0 is returned, otherwise -1 and errno is set
@@ -292,8 +292,13 @@ int jlabel(json_t *J, const char *k, int indent)
    for (len = J->size; len >= J->size - J->len;)
    {
       len = snprintf(J->buf + J->len, J->size - J->len, "\"%s\": ", k);
-      if (len >= J->size - J->len && jgrow(J, len + 1))
-         return 0;
+      if (len >= J->size - J->len)
+      {
+         // return if jgrow() fails
+         if (jgrow(J, len + 1))
+            return 0;
+         len = J->size;
+      }
    }
    J->len += len;
    return len + in;
@@ -308,8 +313,13 @@ int jint(json_t *J, const char *k, long v, int indent)
    for (len = J->size; len >= J->size - J->len;)
    {
       len = snprintf(J->buf + J->len, J->size - J->len, "%ld,%c", v, jsep(J));
-      if (len >= J->size - J->len && jgrow(J, len + 1))
-         return 0;
+      if (len >= J->size - J->len)
+      {
+         // return if jgrow() fails
+         if (jgrow(J, len + 1))
+            return 0;
+         len = J->size;
+      }
    }
    J->len += len;
    return len + in;
@@ -325,6 +335,7 @@ int jstring(json_t *J, const char *k, const char *v, int indent)
    if ((len = jesc(v, strlen(v), buf, sizeof(buf))) == -1)
       return 0;
 
+   // return if jgrow() fails
    if (jgrow(J, len + 5))
       return 0;
 
