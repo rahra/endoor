@@ -361,6 +361,7 @@ void pa_cleanup0(proto_addr_t *pa, int max_age)
       log_msg(LOG_DEBUG, "deleting address %s", addr);
       pa->list[i].family = 0;
       pa->cnt--;
+      j--;
    }
 }
 
