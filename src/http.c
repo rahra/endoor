@@ -19,7 +19,7 @@
  * This file contains the HTTP protocol handling.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/07/04
+ *  \date 2025/07/19
  */
 
 #include <stdio.h>
@@ -71,6 +71,7 @@ int handle_request(int fd, if_info_t *ii)
    int len, argc, code;
    char *url = "/api/v1/";
    json_t J;
+   int method = 0;
 
    log_msg(LOG_DEBUG, "handling HTTP request on %d", fd);
    if ((len = read(fd, buf, sizeof(buf))) == -1)
@@ -99,7 +100,11 @@ int handle_request(int fd, if_info_t *ii)
       goto hr_exit;
 
    code = 501;
-   if (strcmp(argv[0], "GET"))
+   if (!strcmp(argv[0], "GET"))
+      method = METHOD_GET;
+   else if (!strcmp(argv[0], "HEAD"))
+      method = METHOD_HEAD;
+   else
       goto hr_exit;
 
    code = 404;
@@ -121,11 +126,17 @@ int handle_request(int fd, if_info_t *ii)
    }
 
 hr_exit:
+   log_msg(LOG_INFO, "sending HTTP response %d", code);
+
+   if (code != 200)
+      J.len = 0;
+
    len = snprintf(buf, sizeof(buf), "%s\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n", status(code), J.len);
    if (len >= (int) sizeof(buf))
       len = sizeof(buf);
    write(fd, buf, len);
-   write(fd, J.buf, J.len);
+   if (method == METHOD_GET)
+      write(fd, J.buf, J.len);
    return 0;
 }
 

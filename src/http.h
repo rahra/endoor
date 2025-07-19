@@ -19,7 +19,7 @@
  * Header file for the HTTP handler.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/07/06
+ *  \date 2025/07/19
  */
 
 #ifndef HTTP_H
@@ -29,6 +29,9 @@
 //! default listening port number
 #define DEF_PORT 8080
 
+//! HTTP methods
+#define METHOD_GET 1
+#define METHOD_HEAD 2
 
 // prototypes
 void *handle_http(void*);
