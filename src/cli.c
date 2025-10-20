@@ -69,8 +69,6 @@
 #include "cli.h"
 
 #define SNAPLEN 4096
-#define MACTABLESIZE 1024
-#define STATETABLESIZE 16384
 
 
 int data_to_hex(char *dst, const char *buf, int buflen)
