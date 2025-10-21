@@ -20,7 +20,7 @@
  * the CLI.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/06/21
+ *  \date 2025/10/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -281,27 +281,24 @@ int snprint_mac_table(char *buf, int len, proto_addr_t *pa)
 }
 
 
-/*! This function prints the whole state table to the buffer buf. The function
- * always writes a \0-terminated string to buf.
+/*! This function prints the whole state table to a buffer. The memory of the
+ * buffer is acquired using malloc(3) and its address is returned. Thus, the
+ * caller is responsible for freeing the buffer with free(3) again. The
+ * function always writes a \0-terminated string to buf.
  * @param st Pointer to state table struct.
- * @param buf Pointer to destination buffer.
- * @param len Length of destination buffer.
- * @return The function returns the number of bytes written to buf excluding
- * the terminating \0. Thus it a value < len is returned. If the buffer was too
- * small, len is returned. In any case buf will be \0-terminated.
+ * @return The function returns a pointer to the buffer.
  */
-int snprint_states(state_table_t *st, char *buf, int len)
+char *mprint_states(state_table_t *st)
 {
-   int i, j, wlen, tlen = 0;
+   int i, j, wlen;
    int sport, dport;
    char *saddr, *daddr, saddrs[64], daddrs[64];
-
-   if (len > 0)
-      *buf = '\0';
+   char *buf = NULL;
+   int len = 0, buf_size = 0;
 
    pthread_mutex_lock(&st->mutex);
 
-   for (i = 0, j = 0; i < st->size && j < st->num && len > 0; i++)
+   for (i = 0, j = 0; i < st->size && j < st->num; i++)
    {
       if (!st->state[i].family)
          continue;
@@ -331,15 +328,46 @@ int snprint_states(state_table_t *st, char *buf, int len)
       addr_ntop(st->state[i].family, saddr, saddrs, sizeof(saddrs));
       addr_ntop(st->state[i].family, daddr, daddrs, sizeof(daddrs));
 
-      if ((wlen = snprintf(buf, len, "%d: %d %s %d %s %d %ld\n", i, st->state[i].proto, saddrs, sport, daddrs, dport, time(NULL) - st->state[i].age)) >= len)
-         wlen = len;
-      len -= wlen;
-      buf += wlen;
-      tlen += wlen;
+      for (; (wlen = snprintf(buf + len, buf_size - len, "%d: %d %s %d %s %d %ld\n", i, st->state[i].proto, saddrs, sport, daddrs, dport, time(NULL) - st->state[i].age)) >= buf_size - len; )
+      {
+         char *tmpbuf = realloc(buf, buf_size + 4096);
+         if (tmpbuf == NULL)
+         {
+            log_msg(LOG_ERR, "realloc() failed: %s", strerror(errno));
+            return buf;
+         }
+         buf = tmpbuf;
+         buf_size += 4096;
+      }
+
+      len += wlen;
    }
 
    pthread_mutex_unlock(&st->mutex);
 
-   return tlen;
+   return buf;
+}
+
+
+/*! Output info about the state table.
+ * @param st Pointer to state table.
+ * @param buf Pointer to string buffer.
+ * @param len Length of string buffer in bytes.
+ * @return The function returns the number of bytes written to buf excluding
+ * the termination 0-byte. The function will never return more then len - 1 and
+ * the string will always be 0-terminated.
+ */
+int snprint_statetable_info(const state_table_t *st, char *buf, int len)
+{
+   int wlen;
+
+   wlen = snprintf(buf, len, "num_states = %d, max_states = %d", st->num, st->size);
+   if (wlen >= len)
+   {
+      log_msg(LOG_NOTICE, "output truncated");
+      wlen = len - 1;
+   }
+
+   return len;
 }
 

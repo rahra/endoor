@@ -1,4 +1,4 @@
-/* Copyright 2022 Bernhard R. Fischer.
+/* Copyright 2022-2025 Bernhard R. Fischer.
  *
  * This file is part of Endoor.
  *
@@ -20,7 +20,7 @@
  * the CLI.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2022/09/19
+ *  \date 2025/10/21
  */
 
 #ifndef ESTRING_H
@@ -55,7 +55,8 @@ int addr_ntop(int , const char *, char *, int );
 int snprint_proto_addr(char *, int , const proto_addr_t *);
 int snprint_palist(char *, int , const proto_addr_t *, int );
 int snprint_mac_table(char *, int , proto_addr_t *);
-int snprint_states(state_table_t *, char *, int );
+char *mprint_states(state_table_t *);
+int snprint_statetable_info(const state_table_t *, char *, int );
 int fprintj_palist(FILE *, proto_addr_t *, int );
 int jpalist(json_t*, proto_addr_t *, int );
 

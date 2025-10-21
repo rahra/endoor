@@ -19,7 +19,7 @@
  * This file contains the code for the cli.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/07/06
+ *  \date 2025/10/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -195,6 +195,7 @@ static void cli_help(FILE *f)
          "nodebug ...... Set debug level to INFO (6).\n"
          "router <hw> .. Set router hardware address.\n"
          "state ........ Show state table.\n"
+         "stateinfo .... Show state table info.\n"
          );
 }
 
@@ -282,7 +283,16 @@ void cli(FILE *f0, FILE *f, if_info_t *ii, int n)
       }
       else if (!strcmp(argv[0], "state"))
       {
-         snprint_states(ii[2].st, buf, sizeof(buf));
+         char *tmpbuf = mprint_states(ii[2].st);
+         if (tmpbuf != NULL)
+         {
+            fprintf(f, "%s\n", tmpbuf);
+            free(tmpbuf);
+         }
+      }
+      else if (!strcmp(argv[0], "stateinfo"))
+      {
+         snprint_statetable_info(ii[2].st, buf, sizeof(buf));
          fprintf(f, "%s\n", buf);
       }
       else if (!strcmp(argv[0], "dump"))

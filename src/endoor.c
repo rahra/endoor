@@ -20,7 +20,7 @@
  * the cli.
  *
  *  \author Bernhard R. Fischer <bf@abenteuerland.at>
- *  \date 2025/07/01
+ *  \date 2025/10/21
  */
 
 #ifdef HAVE_CONFIG_H
@@ -247,8 +247,9 @@ void usage(const char *cmd)
          "  -i <inif> ......... Name of inside interface.\n"
          "  -o <outif> ........ Name of outside interface.\n"
          "  -r <hwaddr> ....... Set hardware address of router to <hwaddr>.\n"
+         "  -s <num_states> ... Maximum of state table entries (default = %d).\n"
          "  -w <pcap> ......... Write packets to file.\n",
-         cmd
+         cmd, STATETABLESIZE
          );
 }
 
@@ -260,6 +261,7 @@ int main(int argc, char **argv)
    char *pcapname = NULL;
    char *hwrouter = NULL;
    state_table_t st;
+   unsigned num_states = STATETABLESIZE;
    char name[16];
    http_param_t hp;
 
@@ -268,7 +270,7 @@ int main(int argc, char **argv)
    strlcpy(ii[1].ifname, "eth0", sizeof(ii[1].ifname));
    strlcpy(ii[0].ifname, "eth1", sizeof(ii[0].ifname));
 
-   while ((c = getopt(argc, argv, "a:dhi:o:r:vw:")) != -1)
+   while ((c = getopt(argc, argv, "a:dhi:o:r:s:vw:")) != -1)
    {
       switch (c)
       {
@@ -293,6 +295,10 @@ int main(int argc, char **argv)
             hwrouter = optarg;
             break;
 
+         case 's':
+            num_states = atoi(optarg);
+            break;
+
          case 'o':
             strlcpy(ii[1].ifname, optarg, sizeof(ii[1].ifname));
             break;
@@ -307,7 +313,7 @@ int main(int argc, char **argv)
       }
    }
 
-   new_state_table(&st, STATETABLESIZE);
+   new_state_table(&st, num_states);
 
    pthread_mutex_init(&ii[1].mutex, NULL);
    init_socket(&ii[1]);
