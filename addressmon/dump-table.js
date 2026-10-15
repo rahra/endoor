@@ -50,17 +50,15 @@ function generateTable(table, data)
 
       // MAC address
       cell = row.insertCell();
-      cell.style.fontFamily = "monospace";
 
       dev = jdevs.find(({addr}) => addr.toLowerCase() == element["addr"]);
-      cell.style.backgroundColor = dev ? "PaleGreen" : "Salmon";
+      cell.classList.add(dev ? "mac-known" : "mac-unknown");
 
       text = document.createTextNode(element["addr"]);
       cell.appendChild(text);
 
       // time
       cell = row.insertCell();
-      //cell.style.fontFamily = "monospace";
       text = document.createTextNode(age_string(element["time"]));
       cell.appendChild(text);
 
@@ -90,7 +88,6 @@ function generateTable(table, data)
          dev = {"name": "__UNKNOWN__"};
 
       cell = row.insertCell();
-      //cell.style.fontFamily = "monospace";
       text = document.createTextNode(dev.name);
       cell.appendChild(text);
 
