@@ -51,7 +51,7 @@ static int indent_ = 1;
  */
 int strpos(const char *s, int c)
 {
-   char *d;
+   const char *d;
 
    if ((d = strchr(s, c)) == NULL)
       return -1;
