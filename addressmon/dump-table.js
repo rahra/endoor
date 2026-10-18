@@ -43,10 +43,10 @@ function age_string(t)
 
 function generateTable(table, data)
 {
+   var row, cell, text, dev;
    for (let element of data)
    {
-      let row = table.insertRow();
-      var cell, text, dev;
+      row = table.insertRow();
 
       // MAC address
       cell = row.insertCell();
@@ -90,7 +90,30 @@ function generateTable(table, data)
       cell = row.insertCell();
       text = document.createTextNode(dev.name);
       cell.appendChild(text);
+   }
 
+   for (let element of jdevs)
+   {
+      if (data.find(({addr}) => addr == element["addr"].toLowerCase()))
+      //if (data.find(({addr}) => console.log(element["addr"])))
+         continue;
+
+      row = table.insertRow();
+      cell = row.insertCell();
+      cell.classList.add("mac-offline");
+      text = document.createTextNode(element["addr"].toLowerCase());
+      cell.appendChild(text);
+
+      cell = row.insertCell();
+      text = document.createTextNode("");
+      cell.appendChild(text);
+
+      // network addresses
+      cell = row.insertCell();
+      cell.innerHTML = "offline";
+      cell = row.insertCell();
+      text = document.createTextNode(element["name"]);
+      cell.appendChild(text);
    }
 }
 

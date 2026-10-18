@@ -12,6 +12,7 @@
   --text-color: #333333;
   --known-bg: #a4ffac;
   --unknown-bg: #ff8183;
+  --offline-bg: #f0f0f0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,6 +21,7 @@
     --text-color: #e0e0e0;
     --known-bg: #5bb161;
     --unknown-bg: #9f5052;
+  --offline-bg: #303030;
   }
 }
 
@@ -38,6 +40,10 @@ body {
 
 .mac-unknown {
    background-color: var(--unknown-bg);
+}
+
+.mac-offline {
+   background-color: var(--offline-bg);
 }
 </style>
 </head>
